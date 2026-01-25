@@ -31,6 +31,7 @@ jobs:
           node build.js
           mkdir -p _site
           mv index.html _site/
+          mv favicon.png _site/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
