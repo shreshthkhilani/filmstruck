@@ -1,26 +1,30 @@
 # FilmStruck
 
-A film tracking app for Sophie and Shreshth. Displays stats and charts for movies watched together.
+Films watched by Sophie and Shreshth.
 
-## Development
+https://shreshthkhilani.github.io/filmstruck
+
+## Data
+
+- `data/log.csv` - watch log (date, title, location, companions, tmdbId)
+- `data/films.csv` - TMDB metadata (tmdbId, title, director, releaseYear, language, posterPath)
+
+## Build
 
 ```bash
-cd web
-npm install
-npm run dev
+node build.js
 ```
 
-## Deployment
+Generates `index.html` from the CSVs.
 
-Push to `main` to auto-deploy to GitHub Pages via the included workflow.
+## Enricher
 
-Live at: https://shreshthkhilani.github.io/filmstruck
+To look up TMDB IDs for new films:
 
-## Adding Films
-
-Edit `data/films.csv` (and copy to `web/public/films.csv`):
-
-```csv
-date,title,location,companions
-2024-01-15,Past Lives,Metrograph,"Alice,Bob"
+```bash
+export TMDB_API_KEY="your-api-key"
+cd src/FilmStruck.Enricher
+dotnet run
 ```
+
+Get a TMDB API key at https://www.themoviedb.org/settings/api
