@@ -41,9 +41,24 @@ function parseDate(str) {
 // Load data
 const logCsv = fs.readFileSync(path.join(__dirname, 'data/log.csv'), 'utf-8');
 const filmsCsv = fs.readFileSync(path.join(__dirname, 'data/films.csv'), 'utf-8');
+const statsCsv = fs.readFileSync(path.join(__dirname, 'data/stats.csv'), 'utf-8');
 
 const log = parseCsv(logCsv);
 const films = parseCsv(filmsCsv);
+const statsRows = parseCsv(statsCsv);
+
+// Build stats lookup: { stat_type: { key: value } }
+const stats = {};
+for (const row of statsRows) {
+  if (!stats[row.stat]) stats[row.stat] = {};
+  stats[row.stat][row.key] = parseInt(row.value, 10);
+}
+
+// Helper to get top N from a stat category
+function getTopN(statType, n) {
+  const entries = Object.entries(stats[statType] || {});
+  return entries.sort((a, b) => b[1] - a[1]).slice(0, n);
+}
 
 // Create lookup by tmdbId
 const filmLookup = {};
@@ -61,6 +76,14 @@ const watchedFilms = log
   }))
   .sort((a, b) => b.dateObj - a.dateObj);
 
+// Get stats for footer
+const totalFilms = stats.watch_year?.ALL_TIME || 0;
+const filmsThisYear = stats.watch_year?.['2026'] || 0;
+const lastWatchedDate = watchedFilms.length > 0 ? watchedFilms[0].date : '';
+const topCompanions = getTopN('companion', 3);
+const topDirectors = getTopN('director', 3);
+const topLanguages = getTopN('language', 3);
+
 // Generate HTML
 const html = `<!DOCTYPE html>
 <html>
@@ -68,14 +91,69 @@ const html = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>filmstruck</title>
+<style>
+/* Poster hover effect */
+img {
+  transition: transform 0.2s ease;
+}
+img:hover {
+  transform: scale(1.5);
+  z-index: 10;
+  position: relative;
+}
+.filmstruck-header {
+  font-family: monospace;
+  font-size: 24px;
+}
+
+/* Footer stats layout */
+footer {
+  margin-top: 40px;
+  padding: 20px;
+}
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  font-family: monospace;
+  font-size: 14px;
+}
+.stat-col {
+  text-align: left;
+}
+.stat-header {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+</style>
 </head>
 <body>
 <center>
-<h1>filmstruck</h1>
+<h1 class="filmstruck-header">filmstruck</h1>
 ${watchedFilms.map(w => `<img src="https://image.tmdb.org/t/p/w154${w.film.posterPath}" alt="${w.film.title} (${w.film.releaseYear})" title="${w.film.title} (${w.film.releaseYear}) dir. ${w.film.director} - watched ${w.date}">
 `).join('')}
 </center>
-<p align="right"><small>last updated ${new Date().toLocaleDateString()}</small></p>
+<footer>
+  <div class="stats">
+    <div class="stat-col">
+      <div class="stat-header">${totalFilms} films</div>
+      <div>${filmsThisYear} in 2026</div>
+      <div>last watched ${lastWatchedDate}</div>
+    </div>
+    <div class="stat-col">
+      <div class="stat-header">top companions</div>
+${topCompanions.map(([name, count]) => `      <div>${name}: ${count}</div>`).join('\n')}
+    </div>
+    <div class="stat-col">
+      <div class="stat-header">top directors</div>
+${topDirectors.map(([name, count]) => `      <div>${name}: ${count}</div>`).join('\n')}
+    </div>
+    <div class="stat-col">
+      <div class="stat-header">top languages</div>
+${topLanguages.map(([code, count]) => `      <div>${code}: ${count}</div>`).join('\n')}
+    </div>
+  </div>
+</footer>
 </body>
 </html>`;
 
