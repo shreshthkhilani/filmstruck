@@ -10,14 +10,6 @@ https://shreshthkhilani.github.io/filmstruck
 - `data/films.csv` - TMDB metadata (tmdbId, title, director, releaseYear, language, posterPath)
 - `data/stats.csv` - aggregated statistics (watch_year, director, language, companion, location, release_decade)
 
-## Build
-
-```bash
-node build.js
-```
-
-Generates `index.html` from the CSVs.
-
 ## CLI
 
 The FilmStruck CLI provides commands for managing your watch log with TMDB integration.
@@ -89,6 +81,19 @@ filmstruck calculate
 
 Generates aggregated stats for: watch year, directors, languages, companions, locations, and release decades.
 
+#### `filmstruck build`
+
+Generate the static site from CSV data:
+
+```bash
+filmstruck build
+```
+
+Generates `index.html` in the repo root by:
+- Loading watch log and film metadata from CSVs
+- Joining data with TMDB poster paths
+- Rendering HTML from templates in `src/FilmStruck.Cli/Templates/`
+
 ### Poster Selection
 
 When adding or enriching films, you can select from multiple poster options:
@@ -120,6 +125,7 @@ cd src/FilmStruck.Cli
 dotnet run -- add
 dotnet run -- enrich
 dotnet run -- calculate
+dotnet run -- build
 ```
 
 ### Uninstall

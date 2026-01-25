@@ -15,6 +15,9 @@ app.Configure(config =>
 
     config.AddCommand<CalculateCommand>("calculate")
         .WithDescription("Calculate and write statistics to stats.csv");
+
+    config.AddCommand<BuildCommand>("build")
+        .WithDescription("Generate static site from CSV data");
 });
 
 return await app.RunAsync(args);

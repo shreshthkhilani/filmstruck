@@ -21,17 +21,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          node-version: 20
+          dotnet-version: '9.0.x'
 
-      - name: Build
+      - name: Build site
         run: |
-          node build.js
+          dotnet run --project src/FilmStruck.Cli -- build
           mkdir -p _site
           mv index.html _site/
-          mv favicon.png _site/
+          cp favicon.png _site/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

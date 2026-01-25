@@ -1,0 +1,76 @@
+body {
+  margin: 0;
+  padding: 20px;
+}
+.filmstruck-header {
+  font-family: monospace;
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+.user-header {
+  font-family: monospace;
+  font-size: 18px;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+.user-name {
+  color: red;
+}
+.heart {
+  color: black;
+}
+.filter-section {
+  margin-bottom: 20px;
+  font-family: monospace;
+}
+.filter-section select {
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px 8px;
+  margin: 0 5px;
+}
+.filter-section button {
+  font-family: monospace;
+  font-size: 14px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+#poster-grid {
+  text-align: center;
+}
+#poster-grid img {
+  transition: transform 0.2s ease;
+}
+#poster-grid img:hover {
+  transform: scale(1.5);
+  z-index: 10;
+  position: relative;
+}
+.empty-state {
+  font-family: monospace;
+  color: #666;
+  padding: 40px;
+}
+footer {
+  margin-top: 40px;
+  padding: 20px;
+}
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px 40px;
+  font-family: monospace;
+  font-size: 14px;
+}
+.stat-col {
+  text-align: left;
+  min-width: 120px;
+}
+.stat-header {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.total-stat-header {
+  color: red;
+}

@@ -5,6 +5,7 @@ namespace FilmStruck.Cli.Services;
 public class CsvService
 {
     private readonly string _repoRoot;
+    public string RepoRoot => _repoRoot;
     public string LogPath { get; }
     public string FilmsPath { get; }
     public string StatsPath { get; }
