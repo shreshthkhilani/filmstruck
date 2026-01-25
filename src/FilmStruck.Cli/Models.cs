@@ -1,0 +1,53 @@
+using System.Text.Json.Serialization;
+
+namespace FilmStruck.Cli;
+
+public class Film
+{
+    public string Date { get; set; }
+    public string Title { get; set; }
+    public string Location { get; set; }
+    public string Companions { get; set; }
+    public int? TmdbId { get; set; }
+
+    public Film(string date, string title, string location, string companions, int? tmdbId)
+    {
+        Date = date;
+        Title = title;
+        Location = location;
+        Companions = companions;
+        TmdbId = tmdbId;
+    }
+}
+
+public record ApprovedFilm(
+    int TmdbId,
+    string Title,
+    string? Director,
+    string? ReleaseYear,
+    string? Language,
+    string? PosterPath
+);
+
+public record MovieOption(TmdbMovie Movie, string? Director, string Year);
+
+public record TmdbSearchResponse(
+    [property: JsonPropertyName("results")] List<TmdbMovie>? Results
+);
+
+public record TmdbMovie(
+    [property: JsonPropertyName("id")] int Id,
+    [property: JsonPropertyName("title")] string? Title,
+    [property: JsonPropertyName("release_date")] string? ReleaseDate,
+    [property: JsonPropertyName("original_language")] string? OriginalLanguage,
+    [property: JsonPropertyName("poster_path")] string? PosterPath
+);
+
+public record TmdbCreditsResponse(
+    [property: JsonPropertyName("crew")] List<TmdbCrewMember>? Crew
+);
+
+public record TmdbCrewMember(
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("job")] string? Job
+);
