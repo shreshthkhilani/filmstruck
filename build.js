@@ -107,6 +107,11 @@ img:hover {
   font-family: monospace;
   font-size: 24px;
 }
+.user-header {
+  color: red;
+  font-family: monospace;
+  font-size: 18px;
+}
 
 /* Footer stats layout */
 footer {
@@ -129,19 +134,23 @@ footer {
   font-weight: bold;
   margin-bottom: 8px;
 }
+.total-stat-header {
+  color: red;
+}
 </style>
 </head>
 <body>
 <center>
 <h1 class="filmstruck-header">filmstruck</h1>
+<h2 class="user-header">s4s</h2>
 ${watchedFilms.map(w => {
   const lines = [
     `${w.film.title} (${w.film.releaseYear})`,
-    `dir. ${w.film.director}`,
+    `dir. ${w.film.director.replaceAll(",", ", ")}`,
     '',
   ];
   var watchedLine = `Watched ${w.date} · ${w.location}`;
-  if (w.companions) watchedLine += ` · ${w.companions}`;
+  if (w.companions) watchedLine += ` · ${w.companions.replaceAll(",", ", ")}`;
   lines.push(watchedLine);
   const tooltip = lines.join('&#10;');
   return `<img src="https://image.tmdb.org/t/p/w154${w.film.posterPath}" alt="${w.film.title} (${w.film.releaseYear})" title="${tooltip}">\n`;
@@ -150,7 +159,7 @@ ${watchedFilms.map(w => {
 <footer>
   <div class="stats">
     <div class="stat-col">
-      <div class="stat-header">${totalFilms} films</div>
+      <div class="stat-header total-stat-header">${totalFilms} films</div>
       <div>${filmsThisYear} in 2026</div>
       <div>last watched ${lastWatchedDate}</div>
     </div>
