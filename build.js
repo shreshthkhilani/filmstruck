@@ -114,13 +114,15 @@ footer {
 }
 .stats {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 60px;
+  gap: 30px 40px;
   font-family: monospace;
   font-size: 14px;
 }
 .stat-col {
   text-align: left;
+  min-width: 120px;
 }
 .stat-header {
   font-weight: bold;
