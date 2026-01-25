@@ -6,9 +6,9 @@ namespace FilmStruck.Cli.Services;
 
 public class PosterSelectionService
 {
-    private const string DefaultOption = "[Default] Use TMDB's primary poster";
-    private const string PreviewOption = "[Preview] Open posters in browser";
-    private const string SkipOption = "[Skip] Keep current poster";
+    private const string DefaultOption = "[[Default]] Use TMDB's primary poster";
+    private const string PreviewOption = "[[Preview]] Open posters in browser";
+    private const string SkipOption = "[[Skip]] Keep current poster";
     private const string Separator = "────────────────────────────────";
 
     public string? SelectPoster(string title, string? year, int movieId, List<TmdbPoster> posters, string? currentPoster)
@@ -84,7 +84,14 @@ public class PosterSelectionService
         var language = FormatLanguage(poster.Language);
         var rating = $"\u2605 {poster.VoteAverage:F1} ({poster.VoteCount} votes)";
 
-        return $"{resolution} \u2022 {language} \u2022 {rating}";
+        var parts = new List<string> { resolution, language, rating };
+
+        if (!string.IsNullOrEmpty(poster.Contributor))
+        {
+            parts.Add($"by {poster.Contributor}");
+        }
+
+        return string.Join(" \u2022 ", parts);
     }
 
     private string FormatLanguage(string? languageCode)

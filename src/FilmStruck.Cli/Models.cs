@@ -62,5 +62,6 @@ public record TmdbPoster(
     [property: JsonPropertyName("height")] int Height,
     [property: JsonPropertyName("iso_639_1")] string? Language,
     [property: JsonPropertyName("vote_average")] double VoteAverage,
-    [property: JsonPropertyName("vote_count")] int VoteCount
+    [property: JsonPropertyName("vote_count")] int VoteCount,
+    [property: JsonPropertyName("contributor")] string? Contributor = null
 );

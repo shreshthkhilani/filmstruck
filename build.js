@@ -83,6 +83,7 @@ const lastWatchedDate = watchedFilms.length > 0 ? watchedFilms[0].date : '';
 const topCompanions = getTopN('companion', 3);
 const topDirectors = getTopN('director', 3);
 const topLanguages = getTopN('language', 3);
+const topReleaseDecades = getTopN('release_decade', 3);
 
 // Generate HTML
 const html = `<!DOCTYPE html>
@@ -141,16 +142,20 @@ ${watchedFilms.map(w => `<img src="https://image.tmdb.org/t/p/w154${w.film.poste
       <div>last watched ${lastWatchedDate}</div>
     </div>
     <div class="stat-col">
-      <div class="stat-header">top companions</div>
-${topCompanions.map(([name, count]) => `      <div>${name}: ${count}</div>`).join('\n')}
-    </div>
-    <div class="stat-col">
       <div class="stat-header">top directors</div>
 ${topDirectors.map(([name, count]) => `      <div>${name}: ${count}</div>`).join('\n')}
     </div>
     <div class="stat-col">
       <div class="stat-header">top languages</div>
 ${topLanguages.map(([code, count]) => `      <div>${code}: ${count}</div>`).join('\n')}
+    </div>
+    <div class="stat-col">
+      <div class="stat-header">top decades</div>
+${topReleaseDecades.map(([name, count]) => `      <div>${name}: ${count}</div>`).join('\n')}
+    </div>
+    <div class="stat-col">
+      <div class="stat-header">top companions</div>
+${topCompanions.map(([name, count]) => `      <div>${name}: ${count}</div>`).join('\n')}
     </div>
   </div>
 </footer>

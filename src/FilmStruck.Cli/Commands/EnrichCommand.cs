@@ -33,7 +33,7 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
         AnsiConsole.MarkupLine($"Loaded [bold]{approvedFilms.Count}[/] approved films\n");
 
         // Sync films that have tmdbId but are missing from films.csv
-        await SyncMissingApprovedFilmsAsync(films, approvedFilms, tmdbService, csvService);
+        await SyncMissingApprovedFilmsAsync(films, approvedFilms, tmdbService, csvService, posterService);
 
         // Process films without tmdbId
         var filmsToProcess = films.Where(f => f.TmdbId == null).ToList();
@@ -152,7 +152,8 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
         List<Film> films,
         Dictionary<int, ApprovedFilm> approvedFilms,
         TmdbService tmdbService,
-        CsvService csvService)
+        CsvService csvService,
+        PosterSelectionService posterService)
     {
         var filmsWithIdButNotApproved = films
             .Where(f => f.TmdbId.HasValue && !approvedFilms.ContainsKey(f.TmdbId.Value))
@@ -161,24 +162,40 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
         if (filmsWithIdButNotApproved.Count == 0)
             return;
 
-        AnsiConsole.MarkupLine($"[yellow]Syncing {filmsWithIdButNotApproved.Count} films to films.csv...[/]");
+        AnsiConsole.MarkupLine($"[yellow]Syncing {filmsWithIdButNotApproved.Count} films to films.csv...[/]\n");
 
-        foreach (var film in filmsWithIdButNotApproved)
+        for (int i = 0; i < filmsWithIdButNotApproved.Count; i++)
         {
+            var film = filmsWithIdButNotApproved[i];
+            AnsiConsole.MarkupLine($"[bold][[{i + 1}/{filmsWithIdButNotApproved.Count}]][/] {Markup.Escape(film.Title)}");
+
             var (approved, error) = await tmdbService.GetApprovedFilmAsync(film.TmdbId!.Value, film.Title);
             if (approved != null)
             {
+                // Poster selection
+                var posters = await tmdbService.GetMoviePostersAsync(film.TmdbId.Value);
+                if (posters.Count > 1)
+                {
+                    var selectedPoster = posterService.SelectPoster(
+                        approved.Title,
+                        approved.ReleaseYear,
+                        film.TmdbId.Value,
+                        posters,
+                        approved.PosterPath);
+                    approved = approved with { PosterPath = selectedPoster };
+                }
+
                 approvedFilms[film.TmdbId.Value] = approved;
-                AnsiConsole.MarkupLine($"  [green]\u2713[/] {Markup.Escape(approved.Title)} ({approved.ReleaseYear ?? "?"}) - {Markup.Escape(approved.Director ?? "Unknown")}");
+                await csvService.WriteApprovedFilmsAsync(approvedFilms);
+                AnsiConsole.MarkupLine($"  [green]Saved:[/] {Markup.Escape(approved.Title)} ({approved.ReleaseYear ?? "?"}) - {Markup.Escape(approved.Director ?? "Unknown")}\n");
             }
             else
             {
-                AnsiConsole.MarkupLine($"  [red]\u2717[/] {Markup.Escape(film.Title)}: {Markup.Escape(error ?? "Unknown error")}");
+                AnsiConsole.MarkupLine($"  [red]Error:[/] {Markup.Escape(error ?? "Unknown error")}\n");
             }
             await Task.Delay(50);
         }
 
-        await csvService.WriteApprovedFilmsAsync(approvedFilms);
         AnsiConsole.MarkupLine("[green]Sync complete.[/]");
     }
 
