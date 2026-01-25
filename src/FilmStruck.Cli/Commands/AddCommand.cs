@@ -103,6 +103,11 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
         await csvService.WriteLogAsync(films);
         await csvService.WriteApprovedFilmsAsync(approvedFilms);
 
+        // 8. Recompute stats
+        var statsService = new StatsService();
+        var stats = statsService.CalculateStats(films, approvedFilms);
+        await statsService.WriteStatsAsync(csvService.StatsPath, stats);
+
         AnsiConsole.MarkupLine($"\n[bold green]Added:[/] {Markup.Escape(title)} on {date} at {Markup.Escape(location)}");
         AnsiConsole.MarkupLine("[dim]Run 'node build.js' to update the site.[/]");
 

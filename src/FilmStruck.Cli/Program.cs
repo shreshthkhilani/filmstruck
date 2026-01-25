@@ -12,6 +12,9 @@ app.Configure(config =>
 
     config.AddCommand<EnrichCommand>("enrich")
         .WithDescription("Look up TMDB IDs for existing log entries");
+
+    config.AddCommand<CalculateCommand>("calculate")
+        .WithDescription("Calculate and write statistics to stats.csv");
 });
 
 return await app.RunAsync(args);

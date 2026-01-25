@@ -7,12 +7,14 @@ public class CsvService
     private readonly string _repoRoot;
     public string LogPath { get; }
     public string FilmsPath { get; }
+    public string StatsPath { get; }
 
     public CsvService()
     {
         _repoRoot = FindRepoRoot(Directory.GetCurrentDirectory());
         LogPath = Path.Combine(_repoRoot, "data", "log.csv");
         FilmsPath = Path.Combine(_repoRoot, "data", "films.csv");
+        StatsPath = Path.Combine(_repoRoot, "data", "stats.csv");
     }
 
     private static string FindRepoRoot(string startDir)
