@@ -22,6 +22,7 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
 
         var csvService = new CsvService();
         using var tmdbService = new TmdbService(apiKey);
+        var posterService = new PosterSelectionService();
 
         AnsiConsole.MarkupLine($"[dim]Reading from:[/] {Markup.Escape(csvService.LogPath)}\n");
 
@@ -53,7 +54,7 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
                     if (!AnsiConsole.Confirm("  Enter TMDB ID manually?", false))
                         continue;
 
-                    var manualResult = await ProcessManualIdAsync(film, tmdbService);
+                    var manualResult = await ProcessManualIdAsync(film, tmdbService, posterService);
                     if (manualResult != null)
                     {
                         film.TmdbId = manualResult.TmdbId;
@@ -93,7 +94,7 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
 
                 if (selected == "<Enter TMDB ID manually>")
                 {
-                    var manualResult = await ProcessManualIdAsync(film, tmdbService);
+                    var manualResult = await ProcessManualIdAsync(film, tmdbService, posterService);
                     if (manualResult != null)
                     {
                         film.TmdbId = manualResult.TmdbId;
@@ -118,6 +119,20 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
                     selectedOption.Movie.OriginalLanguage,
                     selectedOption.Movie.PosterPath
                 );
+
+                // Poster selection
+                var posters = await tmdbService.GetMoviePostersAsync(selectedOption.Movie.Id);
+                if (posters.Count > 1)
+                {
+                    var selectedPoster = posterService.SelectPoster(
+                        approved.Title,
+                        approved.ReleaseYear,
+                        selectedOption.Movie.Id,
+                        posters,
+                        approved.PosterPath);
+                    approved = approved with { PosterPath = selectedPoster };
+                }
+
                 approvedFilms[selectedOption.Movie.Id] = approved;
 
                 await SaveAsync(films, approvedFilms, csvService);
@@ -167,7 +182,7 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
         AnsiConsole.MarkupLine("[green]Sync complete.[/]");
     }
 
-    private async Task<ApprovedFilm?> ProcessManualIdAsync(Film film, TmdbService tmdbService)
+    private async Task<ApprovedFilm?> ProcessManualIdAsync(Film film, TmdbService tmdbService, PosterSelectionService posterService)
     {
         var idInput = AnsiConsole.Ask<string>("  Enter TMDB ID:");
         if (!int.TryParse(idInput, out int manualId))
@@ -186,7 +201,21 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
         AnsiConsole.MarkupLine($"\n  [bold]{Markup.Escape(approved.Title)}[/] ({approved.ReleaseYear}) - {Markup.Escape(approved.Director ?? "Unknown director")}");
 
         if (AnsiConsole.Confirm("  Confirm?"))
+        {
+            // Poster selection
+            var posters = await tmdbService.GetMoviePostersAsync(manualId);
+            if (posters.Count > 1)
+            {
+                var selectedPoster = posterService.SelectPoster(
+                    approved.Title,
+                    approved.ReleaseYear,
+                    manualId,
+                    posters,
+                    approved.PosterPath);
+                approved = approved with { PosterPath = selectedPoster };
+            }
             return approved;
+        }
 
         AnsiConsole.MarkupLine("  [dim]Cancelled[/]\n");
         return null;

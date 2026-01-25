@@ -55,6 +55,16 @@ public class TmdbService : IDisposable
         return options;
     }
 
+    public async Task<List<TmdbPoster>> GetMoviePostersAsync(int movieId)
+    {
+        var url = $"https://api.themoviedb.org/3/movie/{movieId}/images";
+        var response = await _http.GetFromJsonAsync<TmdbImagesResponse>(url);
+        return response?.Posters?
+            .OrderByDescending(p => p.VoteAverage)
+            .ThenByDescending(p => p.VoteCount)
+            .ToList() ?? new List<TmdbPoster>();
+    }
+
     public async Task<(ApprovedFilm? Film, string? Error)> GetApprovedFilmAsync(int tmdbId, string fallbackTitle)
     {
         try

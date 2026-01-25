@@ -22,6 +22,7 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
 
         var csvService = new CsvService();
         using var tmdbService = new TmdbService(apiKey);
+        var posterService = new PosterSelectionService();
 
         AnsiConsole.MarkupLine("[bold blue]Add a new film[/]\n");
 
@@ -42,24 +43,50 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
         }
 
         // 3. Get or create approved film entry
-        if (!approvedFilms.ContainsKey(tmdbId.Value))
+        ApprovedFilm approved;
+        bool isNewFilm = !approvedFilms.ContainsKey(tmdbId.Value);
+
+        if (isNewFilm)
         {
-            var (approved, error) = await tmdbService.GetApprovedFilmAsync(tmdbId.Value, title);
-            if (approved == null)
+            var (fetchedApproved, error) = await tmdbService.GetApprovedFilmAsync(tmdbId.Value, title);
+            if (fetchedApproved == null)
             {
                 AnsiConsole.MarkupLine($"[red]Error fetching film details:[/] {Markup.Escape(error ?? "Unknown error")}");
                 return 1;
             }
-            approvedFilms[tmdbId.Value] = approved;
-            AnsiConsole.MarkupLine($"[green]Added to films.csv:[/] {Markup.Escape(approved.Title)} ({approved.ReleaseYear}) - {Markup.Escape(approved.Director ?? "Unknown")}");
+            approved = fetchedApproved;
         }
         else
         {
-            var existing = approvedFilms[tmdbId.Value];
-            AnsiConsole.MarkupLine($"[dim]Film already in films.csv:[/] {Markup.Escape(existing.Title)}");
+            approved = approvedFilms[tmdbId.Value];
+            AnsiConsole.MarkupLine($"[dim]Film already in films.csv:[/] {Markup.Escape(approved.Title)}");
         }
 
-        // 4. Prompt for date (default: today)
+        // 4. Poster selection
+        var posters = await AnsiConsole.Status()
+            .StartAsync("Fetching posters...", async ctx =>
+            {
+                return await tmdbService.GetMoviePostersAsync(tmdbId.Value);
+            });
+
+        if (posters.Count > 1)
+        {
+            var selectedPoster = posterService.SelectPoster(
+                approved.Title,
+                approved.ReleaseYear,
+                tmdbId.Value,
+                posters,
+                approved.PosterPath);
+            approved = approved with { PosterPath = selectedPoster };
+        }
+
+        approvedFilms[tmdbId.Value] = approved;
+        if (isNewFilm)
+        {
+            AnsiConsole.MarkupLine($"[green]Added to films.csv:[/] {Markup.Escape(approved.Title)} ({approved.ReleaseYear}) - {Markup.Escape(approved.Director ?? "Unknown")}");
+        }
+
+        // 5. Prompt for date (default: today)
         var today = DateTime.Now.ToString("M/d/yyyy");
         var dateInput = AnsiConsole.Prompt(
             new TextPrompt<string>($"[green]Date[/] (M/d/yyyy):")
@@ -67,7 +94,7 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
                 .AllowEmpty());
         var date = string.IsNullOrWhiteSpace(dateInput) ? today : dateInput;
 
-        // 5. Prompt for location
+        // 6. Prompt for location
         string location;
         if (recentLocations.Count > 0)
         {
@@ -92,18 +119,18 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
             location = AnsiConsole.Ask<string>("Enter [green]location[/]:");
         }
 
-        // 6. Prompt for companions (optional)
+        // 7. Prompt for companions (optional)
         var companions = AnsiConsole.Prompt(
             new TextPrompt<string>("[green]Companions[/] (comma-separated, or empty):")
                 .AllowEmpty());
 
-        // 7. Append to log.csv
+        // 8. Append to log.csv
         var newFilm = new Film(date, title, location, companions ?? "", tmdbId.Value);
         films.Add(newFilm);
         await csvService.WriteLogAsync(films);
         await csvService.WriteApprovedFilmsAsync(approvedFilms);
 
-        // 8. Recompute stats
+        // 9. Recompute stats
         var statsService = new StatsService();
         var stats = statsService.CalculateStats(films, approvedFilms);
         await statsService.WriteStatsAsync(csvService.StatsPath, stats);
