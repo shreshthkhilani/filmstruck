@@ -133,8 +133,18 @@ footer {
 <body>
 <center>
 <h1 class="filmstruck-header">filmstruck</h1>
-${watchedFilms.map(w => `<img src="https://image.tmdb.org/t/p/w154${w.film.posterPath}" alt="${w.film.title} (${w.film.releaseYear})" title="${w.film.title} (${w.film.releaseYear}) dir. ${w.film.director} - watched ${w.date}">
-`).join('')}
+${watchedFilms.map(w => {
+  const lines = [
+    `${w.film.title} (${w.film.releaseYear})`,
+    `dir. ${w.film.director}`,
+    '',
+  ];
+  var watchedLine = `Watched ${w.date} · ${w.location}`;
+  if (w.companions) watchedLine += ` · ${w.companions}`;
+  lines.push(watchedLine);
+  const tooltip = lines.join('&#10;');
+  return `<img src="https://image.tmdb.org/t/p/w154${w.film.posterPath}" alt="${w.film.title} (${w.film.releaseYear})" title="${tooltip}">\n`;
+}).join('')}
 </center>
 <footer>
   <div class="stats">
