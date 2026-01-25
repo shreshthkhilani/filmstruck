@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="favicon.png">
+<title>filmstruck</title>
+<style>
+{{STYLES}}
+</style>
+</head>
+<body>
+<center>
+<h1 class="filmstruck-header">filmstruck</h1>
+<h2 class="user-header" id="user-header"><span class="user-name">s4s</span></h2>
+<div class="filter-section">
+  <label>filter:</label>
+  <select id="companion1">
+    <option value="">everyone</option>
+  </select>
+  <select id="companion2" style="display:none;">
+    <option value="">+ add companion</option>
+  </select>
+  <button id="clear-filter" style="display:none;">clear</button>
+</div>
+<div id="poster-grid"></div>
+</center>
+<footer>
+  <div class="stats" id="stats"></div>
+</footer>
+
+<script>
+const FILMS = {{FILMS_DATA}};
+const COMPANIONS = {{COMPANIONS_DATA}};
+
+{{APP_JS}}
+</script>
+</body>
+</html>
