@@ -36,7 +36,10 @@ body {
   cursor: pointer;
 }
 #poster-grid {
-  text-align: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 154px);
+  justify-content: center;
+  gap: 6px;
 }
 #poster-grid img {
   transition: transform 0.2s ease;
