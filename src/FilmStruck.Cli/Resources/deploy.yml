@@ -34,7 +34,7 @@ jobs:
         run: |
           mkdir -p _site
           mv index.html _site/
-          cp favicon.png _site/ 2>/dev/null || true
+          cp favicon.png _site/
 
       - uses: actions/configure-pages@v4
 

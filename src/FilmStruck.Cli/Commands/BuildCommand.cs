@@ -42,7 +42,27 @@ public class BuildCommand : AsyncCommand<BuildCommand.Settings>
 
         AnsiConsole.MarkupLine($"\n[bold green]Generated:[/] {outputPath}");
 
+        // Write favicon (use user's if exists, otherwise use default)
+        var faviconPath = Path.Combine(csvService.RepoRoot, "favicon.png");
+        if (!File.Exists(faviconPath))
+        {
+            var defaultFavicon = LoadResource("favicon.png");
+            await File.WriteAllBytesAsync(faviconPath, defaultFavicon);
+            AnsiConsole.MarkupLine($"[dim]Created default favicon[/]");
+        }
+
         return 0;
+    }
+
+    private static byte[] LoadResource(string name)
+    {
+        var assembly = typeof(BuildCommand).Assembly;
+        var resourceName = $"FilmStruck.Cli.Resources.{name}";
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Resource {resourceName} not found");
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        return ms.ToArray();
     }
 
     private static List<WatchedFilm> JoinLogWithFilms(List<Film> log, Dictionary<int, ApprovedFilm> films)
