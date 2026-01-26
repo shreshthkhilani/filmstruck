@@ -103,11 +103,11 @@ function getTopN(obj, n) {
 function renderHeader(filter) {
   const header = document.getElementById('user-header');
   if (filter.length === 0) {
-    header.innerHTML = '<span class="user-name">s4s</span>';
+    header.innerHTML = '<span class="user-name">' + escapeHtml(USERNAME) + '</span>';
   } else if (filter.length === 1) {
-    header.innerHTML = '<span class="user-name">s4s</span> <span class="heart">♥</span> <span class="user-name">' + escapeHtml(filter[0].toLowerCase()) + '</span>';
+    header.innerHTML = '<span class="user-name">' + escapeHtml(USERNAME) + '</span> <span class="heart">♥</span> <span class="user-name">' + escapeHtml(filter[0].toLowerCase()) + '</span>';
   } else {
-    header.innerHTML = '<span class="user-name">s4s</span> <span class="heart">♥</span> <span class="user-name">' + escapeHtml(filter[0].toLowerCase()) + '</span> <span class="heart">♥</span> <span class="user-name">' + escapeHtml(filter[1].toLowerCase()) + '</span>';
+    header.innerHTML = '<span class="user-name">' + escapeHtml(USERNAME) + '</span> <span class="heart">♥</span> <span class="user-name">' + escapeHtml(filter[0].toLowerCase()) + '</span> <span class="heart">♥</span> <span class="user-name">' + escapeHtml(filter[1].toLowerCase()) + '</span>';
   }
 }
 
@@ -247,7 +247,7 @@ function render() {
 
   // Update page title
   if (filter.length > 0) {
-    document.title = 'filmstruck - s4s ♥ ' + filter.map(c => c.toLowerCase()).join(' ♥ ');
+    document.title = 'filmstruck - ' + USERNAME + ' ♥ ' + filter.map(c => c.toLowerCase()).join(' ♥ ');
   } else {
     document.title = 'filmstruck';
   }

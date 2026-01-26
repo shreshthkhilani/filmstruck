@@ -13,9 +13,14 @@ public class BuildCommand : AsyncCommand<BuildCommand.Settings>
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
         var csvService = new CsvService();
+        var configService = new ConfigService();
         var generator = new SiteGeneratorService();
 
         AnsiConsole.MarkupLine("[bold blue]Building static site...[/]\n");
+
+        // Load config
+        var config = configService.LoadConfig(csvService.RepoRoot);
+        AnsiConsole.MarkupLine($"[dim]Username: {config.Username}[/]");
 
         // Load data
         var log = await csvService.LoadLogAsync();
@@ -29,7 +34,7 @@ public class BuildCommand : AsyncCommand<BuildCommand.Settings>
         AnsiConsole.MarkupLine($"[dim]Found {companions.Count} unique companions[/]");
 
         // Generate HTML
-        var html = generator.GenerateHtml(watchedFilms, companions);
+        var html = generator.GenerateHtml(watchedFilms, companions, config);
 
         // Write output
         var outputPath = Path.Combine(csvService.RepoRoot, "index.html");
