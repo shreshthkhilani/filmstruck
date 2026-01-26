@@ -4,7 +4,7 @@ tmdbId,title,director,releaseYear,language,posterPath
 144,Wings of Desire,Wim Wenders,1987,de,/iZQs2vUeCzvS1KfZJ6uYNCGJBBV.jpg
 146,"Crouching Tiger, Hidden Dragon",Ang Lee,2000,zh,/iNDVBFNz4XyYzM9Lwip6atSTFqf.jpg
 194,Amélie,Jean-Pierre Jeunet,2001,fr,/nSxDa3M9aMvGVLoItzWTepQ5h5d.jpg
-239,Some Like It Hot,Billy Wilder,1959,en,/hVIKyTK13AvOGv7ICmJjK44DTzp.jpg
+239,Some Like It Hot,Billy Wilder,1959,en,/uRomZf1LmLtX4ZiL3B7lZEFNMAn.jpg
 260,The 39 Steps,Alfred Hitchcock,1935,en,/oC81jK6aAug4MA0xzYVngHmjsZS.jpg
 294,Desert Hearts,Donna Deitch,1985,en,/klAHoWOZgL8sR74Tnl7K7z4Lziq.jpg
 345,Eyes Wide Shut,Stanley Kubrick,1999,en,/knEIz1eNGl5MQDbrEAVWA7iRqF9.jpg
@@ -30,7 +30,8 @@ tmdbId,title,director,releaseYear,language,posterPath
 1051,The French Connection,William Friedkin,1971,en,/5XSGvIKl2yPvOkieFjc3rzLw7x0.jpg
 1089,Point Break,Kathryn Bigelow,1991,en,/tlbERIghrQ4oofqlbF7H0K0EYnx.jpg
 1398,Stalker,Andrei Tarkovsky,1979,ru,/1qhOyf5C4s9ZdvY8d5JDx9DFMeT.jpg
-1480,Touch of Evil,Orson Welles,1958,en,/1pvRgmfBaoMczIJBOi9gCOZ4FMC.jpg
+1480,Touch of Evil,Orson Welles,1958,en,/viru7KcgTURKPZhQ5GhGsDwQrlg.jpg
+1678,Godzilla,Ishirō Honda,1954,ja,/2W0Yw0qrgVMgdsSCZRKtfvaAh0i.jpg
 1808,Velvet Goldmine,Todd Haynes,1998,en,/bsuSac0PldPFcOtR1Vioe7VBF4l.jpg
 1811,Nowhere,Gregg Araki,1997,en,/c1TZKfzvATep5x5DthqWjjWtU2l.jpg
 1923,Twin Peaks: Fire Walk with Me,David Lynch,1992,en,/mxsGXqetGnirf99qapYd5MMY1VL.jpg
@@ -43,7 +44,7 @@ tmdbId,title,director,releaseYear,language,posterPath
 2574,The Lovers,Louis Malle,1958,fr,/5WxZp3XpCnK1EQ6D8XASbpCkrzO.jpg
 2758,Addams Family Values,Barry Sonnenfeld,1993,en,/sdxT2VjVSx9DRicwnuECUdBHeE7.jpg
 2907,The Addams Family,Barry Sonnenfeld,1991,en,/qFf8anju5f2epI0my8RdwwIXFIP.jpg
-3078,It Happened One Night,Frank Capra,1934,en,/2PNUGWAflH6UUumas0POMmokHlc.jpg
+3078,It Happened One Night,Frank Capra,1934,en,/wx4ptyx3vlPBVl5DzBA8KomcJww.jpg
 3133,Badlands,Terrence Malick,1974,en,/z81rBzHNgiNLean2JTGHgxjJ8nq.jpg
 4203,Women on the Verge of a Nervous Breakdown,Pedro Almodóvar,1988,es,/8C5FJlUo96pj1xAs2BKnB58PYzi.jpg
 4499,"Pepi, Luci, Bom",Pedro Almodóvar,1980,es,/xL72JwMDJLGZBUtXgjx7eERJ8nj.jpg
@@ -80,13 +81,13 @@ tmdbId,title,director,releaseYear,language,posterPath
 12493,High and Low,Akira Kurosawa,1963,ja,/tgNjemQPG96uIezpiUiXFcer5ga.jpg
 13398,Tokyo Godfathers,Satoshi Kon,2003,ja,/sPC66btzQlzuRdPKiSDYZ5Hvxgc.jpg
 14269,Polyester,John Waters,1981,en,/14RfMqOe8eF17bUajPsy4HtRsVC.jpg
-14626,Beau Travail,Claire Denis,2000,fr,/5ySa1aQaT7kMcAbKwlS1HXxp2hM.jpg
+14626,Beau Travail,Claire Denis,2000,fr,/bEJzBtPuuuWKUDWlGPET2DXhWqU.jpg
 14698,"Suddenly, Last Summer",Joseph L. Mankiewicz,1959,en,/igma0zn9J5srRvOMDRnxyUDQXJL.jpg
 16391,Black Narcissus,"Emeric Pressburger,Michael Powell",1947,en,/jSbFWWbkUq5N5ikewJHNATcWnxS.jpg
 16672,Woman in the Dunes,Hiroshi Teshigahara,1964,ja,/f0JpsMQ9oEjKBD66Ky3qK3z7LGT.jpg
 17478,Dhoom,Sanjay Gadhvi,2004,hi,/A7fxXAsuYEohxYNl8YeH3FYkuDv.jpg
 17905,Branded to Kill,Seijun Suzuki,1967,ja,/asiSCq1SFrCV4gy7PJzw8c3m0yL.jpg
-18329,Happy Together,Wong Kar-Wai,1997,cn,/kO4KjUkQOfWSBw06Bdl7m6AlEP7.jpg
+18329,Happy Together,Wong Kar-Wai,1997,cn,/dAyUTgO1BGuEZhF3f2G8V9d8sXM.jpg
 18352,The Cremator,Juraj Herz,1969,cs,/9or2Jzw9HOE4gp9niwXBkZdpTVx.jpg
 19542,The Red Shoes,"Michael Powell,Emeric Pressburger",1948,en,/tRpm0MNYoMOgyumL9ePI3wB2P9V.jpg
 20345,The Bird with the Crystal Plumage,Dario Argento,1970,it,/dpALRkwodEIT7TGX9SqTgwVNn0i.jpg
@@ -187,7 +188,6 @@ tmdbId,title,director,releaseYear,language,posterPath
 517731,3 Faces,Jafar Panahi,2018,fa,/clpmeXLRg65zGGP1zoyYOLIakQG.jpg
 560016,Monkey Man,Dev Patel,2024,en,/4lhR4L2vzzjl68P1zJyCH755Oz4.jpg
 696506,Mickey 17,Bong Joon Ho,2025,en,/edKpE9B5qN3e559OuMCLZdW1iBZ.jpg
-699718,"Godzilla, the Monster of the Pacific Ocean","Ishirō Honda,Terry O. Morse",1957,fr,/s356P27L6Z16sADmLUXQEyQVq5c.jpg
 749004,Petite Maman,Céline Sciamma,2021,fr,/fxl2ARZO2vRfUGDfqSz2bostauE.jpg
 792307,Poor Things,Yorgos Lanthimos,2023,en,/kCGlIMHnOm8JPXq3rXM6c5wMxcT.jpg
 837335,La Chimera,Alice Rohrwacher,2023,it,/lDaUha09CumsoSAt9MIRbS9WBNH.jpg
