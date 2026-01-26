@@ -13,7 +13,7 @@
 
     <!-- NuGet package metadata -->
     <PackageId>FilmStruck.Cli</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>Shreshth Khilani</Authors>
     <Description>A CLI tool for tracking your film watching history with TMDB integration. Generate a beautiful static site to showcase your film log.</Description>
     <PackageProjectUrl>https://github.com/shreshthkhilani/filmstruck</PackageProjectUrl>
