@@ -58,12 +58,10 @@ filmstruck/
 │       ├── Templates/          # HTML/CSS/JS templates (embedded)
 │       ├── Resources/          # Init templates (embedded)
 │       └── Program.cs          # Entry point
-├── data/                       # Example film data
 ├── .github/
 │   └── workflows/
-│       ├── deploy.yml          # Deploys example site
 │       └── publish.yml         # Publishes to NuGet
-├── filmstruck.json             # Example config
+├── docs/                       # Documentation
 └── README.md
 ```
 
@@ -133,18 +131,17 @@ Placeholders:
 Currently there are no automated tests. Manual testing:
 
 ```bash
-# Test init in a fresh directory
+# Create a test directory
 mkdir /tmp/test-fs && cd /tmp/test-fs && git init
+
+# Test init
 dotnet run --project /path/to/filmstruck/src/FilmStruck.Cli -- init -u testuser
 
-# Test build in the fresh directory (should work with empty data)
+# Test build (should work with empty data)
 dotnet run --project /path/to/filmstruck/src/FilmStruck.Cli -- build
-open index.html  # Should show "testuser" as the username
 
-# Test build in the main repo
-cd /path/to/filmstruck
-dotnet run --project src/FilmStruck.Cli -- build
-open index.html
+# Verify output
+open index.html  # Should show "testuser" as the username
 ```
 
 ## Submitting Changes

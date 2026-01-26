@@ -166,12 +166,6 @@ my-films/
 
 Cached TMDB metadata, automatically populated when adding films.
 
-## Example
-
-See this repository's `data/` folder for an example of a populated film log.
-
-Live site: https://shreshthkhilani.github.io/filmstruck
-
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for information on developing the CLI.
