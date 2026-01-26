@@ -50,6 +50,7 @@ function calculateStats(films) {
     lastWatched: films.length > 0 ? sortFilms(films)[0].date : '',
     directors: {},
     languages: {},
+    locations: {},
     decades: {},
     companions: {}
   };
@@ -72,6 +73,11 @@ function calculateStats(films) {
     // Languages
     if (f.language) {
       stats.languages[f.language] = (stats.languages[f.language] || 0) + 1;
+    }
+
+    // Locations
+    if (f.location) {
+      stats.locations[f.location] = (stats.locations[f.location] || 0) + 1;
     }
 
     // Release decades
@@ -187,6 +193,15 @@ function renderStats(stats, filter) {
     html += '<div class="stat-col">';
     html += '<div class="stat-header">top decades</div>';
     html += topDecades.map(([name, count]) => '<div>' + name + ': ' + count + '</div>').join('');
+    html += '</div>';
+  }
+
+  // Top locations
+  const topLocations = getTopN(stats.locations, 3);
+  if (topLocations.length > 0) {
+    html += '<div class="stat-col">';
+    html += '<div class="stat-header">top locations</div>';
+    html += topLocations.map(([name, count]) => '<div>' + escapeHtml(name) + ': ' + count + '</div>').join('');
     html += '</div>';
   }
 
