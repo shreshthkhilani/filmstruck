@@ -1,5 +1,7 @@
 # FilmStruck
 
+[![NuGet](https://img.shields.io/nuget/v/FilmStruck.Cli)](https://www.nuget.org/packages/FilmStruck.Cli)
+
 A CLI tool for tracking your film watching history with TMDB integration. Generate a beautiful static site to showcase your film log.
 
 ## Quick Start
@@ -166,9 +168,20 @@ my-films/
 
 Cached TMDB metadata, automatically populated when adding films.
 
+## Sample Site
+
+See a fully populated example at [s4s-filmstruck](https://github.com/shreshthkhilani/s4s-filmstruck):
+
+- **Live site:** https://shreshthkhilani.github.io/s4s-filmstruck
+- 200+ films with metadata
+- Companion filtering in action
+- Custom favicon example
+
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for information on developing the CLI.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical specification.
 
 ## License
 
