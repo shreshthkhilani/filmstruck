@@ -1,5 +1,7 @@
 # FilmStruck
 
+[![NuGet](https://img.shields.io/nuget/v/FilmStruck.Cli)](https://www.nuget.org/packages/FilmStruck.Cli)
+
 A CLI tool for tracking your film watching history with TMDB integration. Generate a beautiful static site to showcase your film log.
 
 ## Quick Start
