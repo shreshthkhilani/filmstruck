@@ -1,7 +1,7 @@
 stat,key,value
 watch_year,ALL_TIME,211
-watch_year,2026,24
-watch_year,2025,101
+watch_year,2026,25
+watch_year,2025,100
 watch_year,2024,82
 watch_year,2023,4
 director,Jafar Panahi,8
@@ -14,13 +14,13 @@ director,David Lynch,4
 director,Robert Altman,4
 director,Werner Herzog,4
 director,Akira Kurosawa,3
+director,Billy Wilder,3
 director,Éric Rohmer,3
 director,Francis Ford Coppola,3
 director,Gregg Araki,3
 director,Ingmar Bergman,3
 director,King Hu,3
 director,Barry Sonnenfeld,2
-director,Billy Wilder,2
 director,Bong Joon Ho,2
 director,Claire Denis,2
 director,Dario Argento,2
@@ -139,7 +139,6 @@ director,Stanley Kubrick,1
 director,Stanley Kwan Kam-Pang,1
 director,Susan Seidelman,1
 director,Terrence Malick,1
-director,Terry O. Morse,1
 director,Tim Burton,1
 director,Tsai Ming-liang,1
 director,Vishal Bhardwaj,1
@@ -148,9 +147,9 @@ director,William Friedkin,1
 director,Yorgos Lanthimos,1
 director,Yurii Illienko,1
 director,Yuval Abraham,1
-language,en,91
-language,fr,26
-language,ja,19
+language,en,92
+language,fr,25
+language,ja,20
 language,fa,13
 language,zh,9
 language,de,8
@@ -169,10 +168,10 @@ language,ml,1
 language,pt,1
 language,uk,1
 companion,Lee,16
-companion,Isabel,13
+companion,Isabel,12
 companion,Yash,9
 companion,Eli,7
-companion,Varnica,6
+companion,Varnica,7
 companion,Jack,5
 companion,Kunal,4
 companion,Ted,4
@@ -197,8 +196,8 @@ companion,Jocelyn,1
 companion,Meg,1
 companion,Rohin,1
 companion,Vanshita,1
-location,600 Park Pl,76
-location,24 8th Ave,45
+location,600 Park Pl,75
+location,24 8th Ave,46
 location,Metrograph,41
 location,BAM,11
 location,Film Forum,10
@@ -218,7 +217,7 @@ release_decade,1980s,36
 release_decade,1990s,34
 release_decade,1970s,30
 release_decade,1960s,26
-release_decade,1950s,22
+release_decade,1950s,23
 release_decade,2020s,22
 release_decade,2000s,19
 release_decade,1940s,8
