@@ -7,6 +7,9 @@ app.Configure(config =>
 {
     config.SetApplicationName("filmstruck");
 
+    config.AddCommand<InitCommand>("init")
+        .WithDescription("Initialize a new filmstruck repository");
+
     config.AddCommand<AddCommand>("add")
         .WithDescription("Add a new film entry with TMDB lookup");
 

@@ -8,7 +8,7 @@ public class SiteGeneratorService
     private static readonly Assembly Assembly = typeof(SiteGeneratorService).Assembly;
     private static readonly string ResourcePrefix = "FilmStruck.Cli.Templates.";
 
-    public string GenerateHtml(List<WatchedFilm> films, List<CompanionCount> companions)
+    public string GenerateHtml(List<WatchedFilm> films, List<CompanionCount> companions, FilmStruckConfig config)
     {
         var template = LoadTemplate("index.html");
         var styles = LoadTemplate("styles.css");
@@ -18,6 +18,7 @@ public class SiteGeneratorService
         var companionsJson = JsonSerializer.Serialize(companions);
 
         return template
+            .Replace("{{USERNAME}}", config.Username)
             .Replace("{{STYLES}}", styles)
             .Replace("{{FILMS_DATA}}", filmsJson)
             .Replace("{{COMPANIONS_DATA}}", companionsJson)

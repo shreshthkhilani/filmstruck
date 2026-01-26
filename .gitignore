@@ -1,7 +1,3 @@
-# Generated
-/index.html
-_site/
-
 # .NET
 bin/
 obj/
@@ -9,10 +5,7 @@ obj/
 *.suo
 *.userosscache
 .vs/
-
-# Node
-node_modules/
-dist/
+nupkg/
 
 # OS
 .DS_Store

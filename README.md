@@ -1,47 +1,58 @@
 # FilmStruck
 
-Films watched by Sophie and Shreshth.
+A CLI tool for tracking your film watching history with TMDB integration. Generate a beautiful static site to showcase your film log.
 
-https://shreshthkhilani.github.io/filmstruck
+## Quick Start
 
-## Data
-
-- `data/log.csv` - watch log (date, title, location, companions, tmdbId)
-- `data/films.csv` - TMDB metadata (tmdbId, title, director, releaseYear, language, posterPath)
-- `data/stats.csv` - aggregated statistics (watch_year, director, language, companion, location, release_decade)
-
-## CLI
-
-The FilmStruck CLI provides commands for managing your watch log with TMDB integration.
-
-### Setup
-
-1. Get a TMDB API key at https://www.themoviedb.org/settings/api
-
-2. Set the environment variable:
 ```bash
+# Install the CLI
+dotnet tool install --global FilmStruck.Cli
+
+# Create a new film log repository
+mkdir my-films && cd my-films
+filmstruck init --username alice
+
+# Set your TMDB API key
 export TMDB_API_KEY="your-api-key"
+
+# Add your first film
+filmstruck add
+
+# Build the static site
+filmstruck build
 ```
 
-### Install as global tool
+## Installation
+
+Requires [.NET 9.0](https://dotnet.microsoft.com/download/dotnet/9.0) or later.
 
 ```bash
-cd src/FilmStruck.Cli
-dotnet pack
-dotnet tool install --global --add-source ./nupkg FilmStruck.Cli
+dotnet tool install --global FilmStruck.Cli
 ```
 
-To update after code changes:
+To update:
 ```bash
-cd src/FilmStruck.Cli
-dotnet tool uninstall --global FilmStruck.Cli
-dotnet pack
-dotnet tool install --global --add-source ./nupkg FilmStruck.Cli
+dotnet tool update --global FilmStruck.Cli
 ```
 
-### Commands
+## Commands
 
-#### `filmstruck add`
+### `filmstruck init`
+
+Initialize a new filmstruck repository with the required structure.
+
+```bash
+filmstruck init --username yourname
+```
+
+Creates:
+- `filmstruck.json` - Configuration file with your username
+- `data/log.csv` - Your watch log
+- `data/films.csv` - TMDB metadata cache
+- `.github/workflows/deploy.yml` - GitHub Pages deployment workflow
+- `.gitignore` - Ignores generated files
+
+### `filmstruck add`
 
 Add a new film entry with TMDB lookup.
 
@@ -49,87 +60,116 @@ Add a new film entry with TMDB lookup.
 filmstruck add
 ```
 
-Interactive prompts:
+Interactive prompts guide you through:
 1. Film title (searches TMDB)
-2. Select from search results or enter TMDB ID manually
-3. **Poster selection** - choose from available posters with metadata (resolution, language, rating) or open TMDB in browser to preview
-4. Date watched (default: today)
-5. Location (with recent locations as suggestions)
+2. Select from search results
+3. Choose poster
+4. Date watched
+5. Location
 6. Companions (optional)
 
-#### `filmstruck enrich`
+### `filmstruck enrich`
 
-Look up TMDB IDs for films in log.csv that don't have one:
+Look up TMDB IDs for existing log entries that don't have one.
 
 ```bash
 filmstruck enrich
 ```
 
-For each film without a TMDB ID:
-- Search TMDB and display results
-- Select the correct film or enter ID manually
-- Choose poster from available options
-- Saves progress after each film
+### `filmstruck build`
 
-#### `filmstruck calculate`
-
-Calculate and write statistics to stats.csv:
-
-```bash
-filmstruck calculate
-```
-
-Generates aggregated stats for: watch year, directors, languages, companions, locations, and release decades.
-
-#### `filmstruck build`
-
-Generate the static site from CSV data:
+Generate the static site from your CSV data.
 
 ```bash
 filmstruck build
 ```
 
-Generates `index.html` in the repo root by:
-- Loading watch log and film metadata from CSVs
-- Joining data with TMDB poster paths
-- Rendering HTML from templates in `src/FilmStruck.Cli/Templates/`
+Outputs `index.html` in the repository root.
 
-### Poster Selection
+### `filmstruck calculate`
 
-When adding or enriching films, you can select from multiple poster options:
-
-```
-Select poster for "Amelie" (2001):
-
-> [Default] Use TMDB's primary poster
-  [Preview] Open posters in browser
-  ────────────────────────────────
-  2000x3000 - English - ★ 5.3 (12 votes)
-  1400x2100 - No text - ★ 5.1 (8 votes)
-  1000x1500 - French - ★ 4.9 (6 votes)
-  ────────────────────────────────
-  [Skip] Keep current poster
-```
-
-- **[Default]** - Use TMDB's highest-rated poster
-- **[Preview]** - Opens the TMDB poster gallery in your browser to view images, then return to make selection
-- **Individual posters** - Shows resolution, language, and community rating
-- **[Skip]** - Keep the current poster (useful when enriching)
-
-### Development
-
-Run without installing:
+Calculate statistics and write to `data/stats.csv`.
 
 ```bash
-cd src/FilmStruck.Cli
-dotnet run -- add
-dotnet run -- enrich
-dotnet run -- calculate
-dotnet run -- build
+filmstruck calculate
 ```
 
-### Uninstall
+## Configuration
 
+Configuration is stored in `filmstruck.json`:
+
+```json
+{
+  "username": "alice",
+  "siteTitle": "filmstruck"
+}
+```
+
+## TMDB API Key
+
+Get a free API key at [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api).
+
+Set it as an environment variable:
 ```bash
-dotnet tool uninstall --global FilmStruck.Cli
+export TMDB_API_KEY="your-api-key"
 ```
+
+Or add to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
+
+## Deployment
+
+### GitHub Pages (Recommended)
+
+The `filmstruck init` command creates a GitHub Actions workflow that automatically deploys your site when you push to `main`.
+
+1. Push your repository to GitHub
+2. Go to Settings > Pages
+3. Set Source to "GitHub Actions"
+4. Push a commit to trigger deployment
+
+Your site will be available at `https://username.github.io/repo-name`
+
+### Manual Deployment
+
+Run `filmstruck build` and host the generated `index.html` anywhere that serves static files.
+
+## Repository Structure
+
+A filmstruck repository contains:
+
+```
+my-films/
+├── data/
+│   ├── log.csv              # Your watch log
+│   └── films.csv            # TMDB metadata cache
+├── .github/
+│   └── workflows/
+│       └── deploy.yml       # GitHub Pages workflow
+├── filmstruck.json          # Configuration
+├── favicon.png              # Optional custom favicon
+└── index.html               # Generated (gitignored)
+```
+
+## Data Format
+
+### log.csv
+
+| Column | Description |
+|--------|-------------|
+| date | Watch date (M/D/YYYY) |
+| title | Film title |
+| location | Where you watched |
+| companions | Comma-separated list of who you watched with |
+| tmdbId | TMDB ID for metadata lookup |
+
+### films.csv
+
+Cached TMDB metadata, automatically populated when adding films.
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for information on developing the CLI.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
