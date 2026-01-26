@@ -133,11 +133,15 @@ Placeholders:
 Currently there are no automated tests. Manual testing:
 
 ```bash
-# Test init
-mkdir /tmp/test-fs && cd /tmp/test-fs
+# Test init in a fresh directory
+mkdir /tmp/test-fs && cd /tmp/test-fs && git init
 dotnet run --project /path/to/filmstruck/src/FilmStruck.Cli -- init -u testuser
 
-# Test build
+# Test build in the fresh directory (should work with empty data)
+dotnet run --project /path/to/filmstruck/src/FilmStruck.Cli -- build
+open index.html  # Should show "testuser" as the username
+
+# Test build in the main repo
 cd /path/to/filmstruck
 dotnet run --project src/FilmStruck.Cli -- build
 open index.html
@@ -151,13 +155,58 @@ open index.html
 4. Test locally
 5. Submit a pull request
 
-## Releasing
+## Releasing to NuGet
 
-Releases are published to NuGet automatically when a GitHub release is created:
+### First-Time Setup
 
-1. Update version in `FilmStruck.Cli.csproj`
-2. Create a GitHub release with tag matching the version (e.g., `v1.0.1`)
-3. The `publish.yml` workflow will push to NuGet.org
+1. **Get a NuGet API key:**
+   - Go to [nuget.org/account/apikeys](https://www.nuget.org/account/apikeys)
+   - Create a new API key with "Push" scope for "FilmStruck.Cli" package
+   - Copy the key (you won't see it again)
+
+2. **Add the secret to GitHub:**
+   - Go to your repo's Settings > Secrets and variables > Actions
+   - Click "New repository secret"
+   - Name: `NUGET_API_KEY`
+   - Value: paste your NuGet API key
+
+### Publishing a Release
+
+1. **Update the version** in `src/FilmStruck.Cli/FilmStruck.Cli.csproj`:
+   ```xml
+   <Version>1.0.1</Version>
+   ```
+
+2. **Commit the version bump:**
+   ```bash
+   git add src/FilmStruck.Cli/FilmStruck.Cli.csproj
+   git commit -m "Bump version to 1.0.1"
+   git push
+   ```
+
+3. **Create a GitHub release:**
+   - Go to Releases > "Create a new release"
+   - Tag: `v1.0.1` (must match version with `v` prefix)
+   - Title: `v1.0.1`
+   - Describe the changes
+   - Click "Publish release"
+
+4. **Verify:** The `publish.yml` workflow will automatically:
+   - Build the package
+   - Push to NuGet.org
+   - Check the Actions tab for status
+
+### Manual Publishing (Alternative)
+
+If you need to publish manually:
+
+```bash
+cd src/FilmStruck.Cli
+dotnet pack --configuration Release -p:Version=1.0.1
+dotnet nuget push ./nupkg/FilmStruck.Cli.1.0.1.nupkg \
+  --api-key YOUR_API_KEY \
+  --source https://api.nuget.org/v3/index.json
+```
 
 ## Questions?
 
