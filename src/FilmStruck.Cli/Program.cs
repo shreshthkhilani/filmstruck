@@ -21,6 +21,9 @@ app.Configure(config =>
 
     config.AddCommand<BuildCommand>("build")
         .WithDescription("Generate static site from CSV data");
+
+    config.AddCommand<ImportLetterboxdCommand>("import-letterboxd-diary")
+        .WithDescription("Import films from Letterboxd diary CSV export");
 });
 
 return await app.RunAsync(args);
