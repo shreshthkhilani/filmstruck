@@ -96,6 +96,31 @@ Calculate statistics and write to `data/stats.csv`.
 filmstruck calculate
 ```
 
+### `filmstruck import-letterboxd-diary`
+
+Import films from a Letterboxd diary CSV export.
+
+```bash
+filmstruck import-letterboxd-diary diary.csv
+```
+
+**How to export your Letterboxd diary:**
+
+1. Go to [letterboxd.com](https://letterboxd.com) and log in
+2. Navigate to **Settings** → **Import & Export**
+3. Click **Export Your Data**
+4. Download and extract the ZIP file
+5. Use the `diary.csv` file from the export
+
+The command will:
+- Parse each diary entry and convert dates to FilmStruck format
+- Skip entries that already exist in your log (by title + date)
+- Prompt you to confirm each film before adding
+- Search TMDB and let you select the correct match
+- Allow poster selection when multiple options are available
+- Prompt for location (with recent location suggestions) and companions
+- Save to `log.csv` and `films.csv`, then recalculate stats
+
 ## Configuration
 
 Configuration is stored in `filmstruck.json`:
