@@ -70,6 +70,30 @@ Interactive prompts guide you through:
 5. Location
 6. Companions (optional)
 
+**Options:**
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--title` | `-t` | Film title for TMDB search |
+| `--date` | `-d` | Watch date in M/d/yyyy format (default: today) |
+| `--location` | `-l` | Where the film was watched |
+| `--companions` | `-c` | Comma-separated list of companions |
+| `--default-poster` | | Use the default/first poster without prompting |
+| `--tmdb-id` | | TMDB movie ID (skips search and confirmation) |
+
+Any flags provided will skip the corresponding interactive prompt. This allows for scripted or partially automated usage:
+
+```bash
+# Fully automated (no prompts)
+filmstruck add --tmdb-id 27053 -d 1/29/2026 -l Home -c "Alice,Bob" --default-poster
+
+# Search by title, skip other prompts
+filmstruck add -t "The Matrix" -d 1/15/2026 -l "AMC Theater" -c ""
+
+# Just use default poster, prompt for everything else
+filmstruck add --default-poster
+```
+
 ### `filmstruck enrich`
 
 Look up TMDB IDs for existing log entries that don't have one.

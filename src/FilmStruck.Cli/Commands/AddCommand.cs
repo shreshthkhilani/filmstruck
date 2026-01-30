@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Globalization;
 using FilmStruck.Cli.Services;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -8,6 +10,46 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
 {
     public class Settings : CommandSettings
     {
+        [CommandOption("-t|--title <TITLE>")]
+        [Description("Film title for TMDB search")]
+        public string? Title { get; set; }
+
+        [CommandOption("-d|--date <DATE>")]
+        [Description("Watch date in M/d/yyyy format (default: today)")]
+        public string? Date { get; set; }
+
+        [CommandOption("-l|--location <LOCATION>")]
+        [Description("Where the film was watched")]
+        public string? Location { get; set; }
+
+        [CommandOption("-c|--companions <COMPANIONS>")]
+        [Description("Comma-separated list of companions")]
+        public string? Companions { get; set; }
+
+        [CommandOption("--default-poster")]
+        [Description("Use the default/first poster without prompting")]
+        public bool DefaultPoster { get; set; }
+
+        [CommandOption("--tmdb-id <ID>")]
+        [Description("TMDB movie ID (skips search and confirmation)")]
+        public int? TmdbId { get; set; }
+
+        public override ValidationResult Validate()
+        {
+            if (!string.IsNullOrEmpty(Date) &&
+                !DateTime.TryParseExact(Date, "M/d/yyyy",
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+            {
+                return ValidationResult.Error("Date must be in M/d/yyyy format (e.g., 1/29/2026)");
+            }
+
+            if (TmdbId.HasValue && TmdbId.Value <= 0)
+            {
+                return ValidationResult.Error("TMDB ID must be a positive integer");
+            }
+
+            return ValidationResult.Success();
+        }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
@@ -31,15 +73,37 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
         var approvedFilms = await csvService.LoadApprovedFilmsAsync();
         var recentLocations = csvService.GetRecentLocations(films);
 
-        // 1. Prompt for title
-        var title = AnsiConsole.Ask<string>("Film [green]title[/]:");
+        // 1. Get title (from flag or prompt)
+        var title = settings.Title ?? AnsiConsole.Ask<string>("Film [green]title[/]:");
 
-        // 2. Search TMDB and select
-        var tmdbId = await SearchAndSelectFilmAsync(tmdbService, title);
-        if (tmdbId == null)
+        // 2. Search TMDB and select (or use --tmdb-id if provided)
+        int? tmdbId;
+        if (settings.TmdbId.HasValue)
         {
-            AnsiConsole.MarkupLine("[yellow]Cancelled.[/]");
-            return 0;
+            // Validate the TMDB ID exists
+            var (validatedFilm, error) = await AnsiConsole.Status()
+                .StartAsync("Validating TMDB ID...", async ctx =>
+                {
+                    return await tmdbService.GetApprovedFilmAsync(settings.TmdbId.Value, title);
+                });
+
+            if (validatedFilm == null)
+            {
+                AnsiConsole.MarkupLine($"[red]Error:[/] {Markup.Escape(error ?? "Invalid TMDB ID")}");
+                return 1;
+            }
+
+            AnsiConsole.MarkupLine($"[dim]Using TMDB ID {settings.TmdbId.Value}:[/] {Markup.Escape(validatedFilm.Title)} ({validatedFilm.ReleaseYear})");
+            tmdbId = settings.TmdbId.Value;
+        }
+        else
+        {
+            tmdbId = await SearchAndSelectFilmAsync(tmdbService, title);
+            if (tmdbId == null)
+            {
+                AnsiConsole.MarkupLine("[yellow]Cancelled.[/]");
+                return 0;
+            }
         }
 
         // 3. Get or create approved film entry
@@ -69,7 +133,7 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
                 return await tmdbService.GetMoviePostersAsync(tmdbId.Value);
             });
 
-        if (posters.Count > 1)
+        if (posters.Count > 1 && !settings.DefaultPoster)
         {
             var selectedPoster = posterService.SelectPoster(
                 approved.Title,
@@ -86,17 +150,29 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
             AnsiConsole.MarkupLine($"[green]Added to films.csv:[/] {Markup.Escape(approved.Title)} ({approved.ReleaseYear}) - {Markup.Escape(approved.Director ?? "Unknown")}");
         }
 
-        // 5. Prompt for date (default: today)
-        var today = DateTime.Now.ToString("M/d/yyyy");
-        var dateInput = AnsiConsole.Prompt(
-            new TextPrompt<string>($"[green]Date[/] (M/d/yyyy):")
-                .DefaultValue(today)
-                .AllowEmpty());
-        var date = string.IsNullOrWhiteSpace(dateInput) ? today : dateInput;
+        // 5. Get date (from flag or prompt, default: today)
+        string date;
+        if (!string.IsNullOrEmpty(settings.Date))
+        {
+            date = settings.Date;
+        }
+        else
+        {
+            var today = DateTime.Now.ToString("M/d/yyyy");
+            var dateInput = AnsiConsole.Prompt(
+                new TextPrompt<string>($"[green]Date[/] (M/d/yyyy):")
+                    .DefaultValue(today)
+                    .AllowEmpty());
+            date = string.IsNullOrWhiteSpace(dateInput) ? today : dateInput;
+        }
 
-        // 6. Prompt for location
+        // 6. Get location (from flag or prompt)
         string location;
-        if (recentLocations.Count > 0)
+        if (!string.IsNullOrEmpty(settings.Location))
+        {
+            location = settings.Location;
+        }
+        else if (recentLocations.Count > 0)
         {
             var locationChoices = recentLocations.Concat(new[] { "<Enter new location>" }).ToList();
             var selectedLocation = AnsiConsole.Prompt(
@@ -119,13 +195,21 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
             location = AnsiConsole.Ask<string>("Enter [green]location[/]:");
         }
 
-        // 7. Prompt for companions (optional)
-        var companions = AnsiConsole.Prompt(
-            new TextPrompt<string>("[green]Companions[/] (comma-separated, or empty):")
-                .AllowEmpty());
+        // 7. Get companions (from flag or prompt, optional)
+        string companions;
+        if (settings.Companions != null)
+        {
+            companions = settings.Companions;
+        }
+        else
+        {
+            companions = AnsiConsole.Prompt(
+                new TextPrompt<string>("[green]Companions[/] (comma-separated, or empty):")
+                    .AllowEmpty()) ?? "";
+        }
 
         // 8. Append to log.csv
-        var newFilm = new Film(date, title, location, companions ?? "", tmdbId.Value);
+        var newFilm = new Film(date, title, location, companions, tmdbId.Value);
         films.Add(newFilm);
         await csvService.WriteLogAsync(films);
         await csvService.WriteApprovedFilmsAsync(approvedFilms);
