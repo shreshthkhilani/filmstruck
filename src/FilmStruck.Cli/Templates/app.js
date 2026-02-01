@@ -132,6 +132,18 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Generate placeholder SVG for films without posters
+function generatePlaceholder(title) {
+  // Truncate long titles and escape for SVG/XML
+  const displayTitle = title.length > 50 ? title.substring(0, 47) + '...' : title;
+  const escaped = displayTitle.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="154" height="231" viewBox="0 0 154 231">' +
+    '<rect fill="#2a2a2a" width="154" height="231"/>' +
+    '<text x="77" y="115" text-anchor="middle" fill="#888" font-family="system-ui,sans-serif" font-size="12">' + escaped + '</text>' +
+    '</svg>';
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
 // Render poster grid
 function renderPosters(films) {
   const grid = document.getElementById('poster-grid');
@@ -150,7 +162,8 @@ function renderPosters(films) {
       'Watched ' + f.date + ' · ' + f.location + (f.companions ? ' · ' + f.companions.replace(/,/g, ', ') : '')
     ];
     const tooltip = lines.join('\n');
-    return '<img src="https://image.tmdb.org/t/p/w154' + f.posterPath + '" alt="' + escapeHtml(f.title) + '" title="' + escapeHtml(tooltip) + '">';
+    const posterUrl = f.posterPath ? 'https://image.tmdb.org/t/p/w154' + f.posterPath : generatePlaceholder(f.title);
+    return '<img src="' + posterUrl + '" alt="' + escapeHtml(f.title) + '" title="' + escapeHtml(tooltip) + '">';
   }).join('\n');
 }
 
