@@ -37,9 +37,17 @@ function filterFilms(films, companions) {
   });
 }
 
-// Sort films by date (reverse chronological)
+// Sort films by date (reverse chronological), preserving log order for same day
 function sortFilms(films) {
-  return [...films].sort((a, b) => parseDate(b.date) - parseDate(a.date));
+  return films
+    .map((f, i) => ({ film: f, index: i }))
+    .sort((a, b) => {
+      const dateDiff = parseDate(b.film.date) - parseDate(a.film.date);
+      if (dateDiff !== 0) return dateDiff;
+      // Same date: higher index (added later) comes first
+      return b.index - a.index;
+    })
+    .map(item => item.film);
 }
 
 // Calculate stats for films
