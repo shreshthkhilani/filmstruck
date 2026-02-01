@@ -65,7 +65,7 @@ filmstruck add
 Interactive prompts guide you through:
 1. Film title (searches TMDB)
 2. Select from search results
-3. Choose poster
+3. Choose poster (displays clickable URLs - Cmd+click to preview)
 4. Date watched
 5. Location
 6. Companions (optional)
@@ -231,6 +231,8 @@ See a fully populated example at [s4s-filmstruck](https://github.com/shreshthkhi
 See [CONTRIBUTING.md](CONTRIBUTING.md) for information on developing the CLI.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical specification.
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## License
 
