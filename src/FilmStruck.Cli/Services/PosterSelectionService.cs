@@ -1,15 +1,11 @@
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Spectre.Console;
 
 namespace FilmStruck.Cli.Services;
 
 public class PosterSelectionService
 {
-    private const string DefaultOption = "[[Default]] Use TMDB's primary poster";
-    private const string PreviewOption = "[[Preview]] Open posters in browser";
-    private const string SkipOption = "[[Skip]] Keep current poster";
-    private const string Separator = "────────────────────────────────";
+    private const string TmdbImageBaseUrl = "https://image.tmdb.org/t/p/w780";
+    private const int MaxPosters = 5;
 
     public string? SelectPoster(string title, string? year, int movieId, List<TmdbPoster> posters, string? currentPoster)
     {
@@ -19,79 +15,48 @@ public class PosterSelectionService
         }
 
         var yearDisplay = !string.IsNullOrEmpty(year) ? $" ({year})" : "";
+        var limitedPosters = posters.Take(MaxPosters).ToList();
 
-        while (true)
+        // Display poster list with clickable URLs
+        AnsiConsole.MarkupLine($"\nSelect poster for [green]\"{Markup.Escape(title)}\"{yearDisplay}[/]:\n");
+
+        for (int i = 0; i < limitedPosters.Count; i++)
         {
-            var choices = BuildChoices(posters);
+            var poster = limitedPosters[i];
+            var number = i + 1;
+            var defaultLabel = i == 0 ? " [yellow](Default)[/]" : "";
+            var resolution = $"{poster.Width}x{poster.Height}";
+            var language = FormatLanguage(poster.Language);
+            var url = $"{TmdbImageBaseUrl}{poster.FilePath}";
 
-            var selected = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title($"Select poster for [green]\"{Markup.Escape(title)}\"{yearDisplay}[/]:")
-                    .PageSize(15)
-                    .AddChoices(choices));
+            AnsiConsole.MarkupLine($"  [bold]{number}.[/]{defaultLabel} {resolution} • {language}");
+            AnsiConsole.MarkupLine($"     [link={url}]{url}[/]");
+            AnsiConsole.WriteLine();
+        }
 
-            if (selected == PreviewOption)
-            {
-                OpenBrowser($"https://www.themoviedb.org/movie/{movieId}/images/posters");
-                AnsiConsole.MarkupLine("[dim]Opened poster gallery in browser. Return here to make your selection.[/]\n");
-                continue;
-            }
+        var selected = AnsiConsole.Prompt(
+            new TextPrompt<string>($"Enter poster number (1-{limitedPosters.Count}) or 's' to skip:")
+                .DefaultValue("1")
+                .Validate(input =>
+                {
+                    if (input.Equals("s", StringComparison.OrdinalIgnoreCase))
+                        return ValidationResult.Success();
+                    if (int.TryParse(input, out int num) && num >= 1 && num <= limitedPosters.Count)
+                        return ValidationResult.Success();
+                    return ValidationResult.Error($"Please enter a number between 1 and {limitedPosters.Count}, or 's' to skip");
+                }));
 
-            if (selected == DefaultOption)
-            {
-                return posters[0].FilePath;
-            }
-
-            if (selected == SkipOption)
-            {
-                return currentPoster;
-            }
-
-            // Find the selected poster by matching the formatted string
-            var posterIndex = choices.IndexOf(selected) - 3; // Account for Default, Preview, Separator
-            if (posterIndex >= 0 && posterIndex < posters.Count)
-            {
-                return posters[posterIndex].FilePath;
-            }
-
+        if (selected.Equals("s", StringComparison.OrdinalIgnoreCase))
+        {
             return currentPoster;
         }
-    }
 
-    private List<string> BuildChoices(List<TmdbPoster> posters)
-    {
-        var choices = new List<string>
+        if (int.TryParse(selected, out int index))
         {
-            DefaultOption,
-            PreviewOption,
-            Separator
-        };
-
-        foreach (var poster in posters.Take(10)) // Limit to top 10 posters
-        {
-            choices.Add(FormatPosterOption(poster));
+            return limitedPosters[index - 1].FilePath;
         }
 
-        choices.Add(Separator);
-        choices.Add(SkipOption);
-
-        return choices;
-    }
-
-    private string FormatPosterOption(TmdbPoster poster)
-    {
-        var resolution = $"{poster.Width}x{poster.Height}";
-        var language = FormatLanguage(poster.Language);
-        var rating = $"\u2605 {poster.VoteAverage:F1} ({poster.VoteCount} votes)";
-
-        var parts = new List<string> { resolution, language, rating };
-
-        if (!string.IsNullOrEmpty(poster.Contributor))
-        {
-            parts.Add($"by {poster.Contributor}");
-        }
-
-        return string.Join(" \u2022 ", parts);
+        return currentPoster;
     }
 
     private string FormatLanguage(string? languageCode)
@@ -144,26 +109,4 @@ public class PosterSelectionService
         };
     }
 
-    private void OpenBrowser(string url)
-    {
-        try
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                Process.Start("open", url);
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                Process.Start("xdg-open", url);
-            }
-        }
-        catch
-        {
-            AnsiConsole.MarkupLine($"[yellow]Could not open browser. Visit:[/] {url}");
-        }
-    }
 }
