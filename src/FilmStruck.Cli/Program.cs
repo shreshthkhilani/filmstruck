@@ -32,6 +32,9 @@ app.Configure(config =>
 
         hearts.AddCommand<HeartsAddCommand>("add")
             .WithDescription("Add a film to favorites");
+
+        hearts.AddCommand<HeartsRemoveCommand>("remove")
+            .WithDescription("Remove a film from favorites");
     });
 });
 
