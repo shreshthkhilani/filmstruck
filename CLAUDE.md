@@ -37,7 +37,6 @@ make build      # Build the CLI
 make test       # Run integration tests
 make clean      # Clean build artifacts
 make reinstall  # Reinstall CLI globally
-make release VERSION=1.3.0  # Prepare a new release
 make help       # Show available commands
 ```
 
@@ -89,4 +88,8 @@ Examples: `feature/import-letterboxd`, `bugfix/csv-parsing`, `chore/update-deps`
 
 ## NuGet Publishing
 
-Version is in `src/FilmStruck.Cli/FilmStruck.Cli.csproj` (`<Version>` element). Publishing is automated via GitHub Actions when a release is created with tag `vX.Y.Z`.
+Version is in `src/FilmStruck.Cli/FilmStruck.Cli.csproj` (`<Version>` element). Publishing is fully automated:
+
+- **PRs to main**: Must include a version bump (enforced by `version-check.yml`)
+- **Merge to main**: Auto-publishes to NuGet and creates a GitHub Release with auto-generated notes
+- **Push to `release/*`**: Publishes pre-release versions (`{version}-rc.{run_number}`)
