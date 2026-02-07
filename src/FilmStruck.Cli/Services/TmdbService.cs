@@ -13,6 +13,12 @@ public class TmdbService : IDisposable
         _http.DefaultRequestHeaders.Add("Accept", "application/json");
     }
 
+    // Constructor for testing with injected HttpClient
+    public TmdbService(HttpClient httpClient)
+    {
+        _http = httpClient;
+    }
+
     public async Task<List<TmdbMovie>> SearchMoviesAsync(string title)
     {
         var encoded = Uri.EscapeDataString(title);
