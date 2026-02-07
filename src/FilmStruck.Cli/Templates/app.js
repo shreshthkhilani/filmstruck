@@ -4,6 +4,9 @@ function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
+// Create Set for O(1) heart lookup
+const HEARTS_SET = new Set(HEARTS.map(id => id.toString()));
+
 // Get companion filter from URL
 function getCompanionFilter() {
   const params = new URLSearchParams(window.location.search);
@@ -167,6 +170,66 @@ function renderPosters(films) {
   }).join('\n');
 }
 
+// Render hearts section (favorite films at the top)
+function renderHeartsSection() {
+  const section = document.getElementById('hearts-section');
+  const grid = document.getElementById('hearts-grid');
+
+  if (HEARTS.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  // Get unique hearted films with all their watch entries
+  const heartedFilms = {};
+  for (const f of FILMS) {
+    if (HEARTS_SET.has(f.tmdbId)) {
+      if (!heartedFilms[f.tmdbId]) {
+        heartedFilms[f.tmdbId] = {
+          film: f,
+          watches: []
+        };
+      }
+      heartedFilms[f.tmdbId].watches.push({
+        date: f.date,
+        location: f.location,
+        companions: f.companions
+      });
+    }
+  }
+
+  // Sort watches by date (most recent first) for each film
+  for (const id in heartedFilms) {
+    heartedFilms[id].watches.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+  }
+
+  // Convert to array and sort by most recent watch
+  const sortedHearts = Object.values(heartedFilms).sort((a, b) => {
+    return parseDate(b.watches[0].date) - parseDate(a.watches[0].date);
+  });
+
+  section.style.display = 'block';
+
+  grid.innerHTML = sortedHearts.map(item => {
+    const f = item.film;
+    const lines = [
+      f.title + ' (' + f.releaseYear + ')',
+      'dir. ' + (f.director || '').replace(/,/g, ', '),
+      '',
+      'Watched:'
+    ];
+    for (const w of item.watches) {
+      let watchLine = '  ' + w.date;
+      if (w.location) watchLine += ' · ' + w.location;
+      if (w.companions) watchLine += ' · ' + w.companions.replace(/,/g, ', ');
+      lines.push(watchLine);
+    }
+    const tooltip = lines.join('\n');
+    const posterUrl = f.posterPath ? 'https://image.tmdb.org/t/p/w154' + f.posterPath : generatePlaceholder(f.title);
+    return '<img src="' + posterUrl + '" alt="' + escapeHtml(f.title) + '" title="' + escapeHtml(tooltip) + '">';
+  }).join('\n');
+}
+
 // Render stats
 function renderStats(stats, filter) {
   const statsEl = document.getElementById('stats');
@@ -277,6 +340,7 @@ function render() {
   const stats = calculateStats(filtered);
 
   renderHeader(filter);
+  renderHeartsSection();
   renderDropdowns(filter);
   renderPosters(filtered);
   renderStats(stats, filter);

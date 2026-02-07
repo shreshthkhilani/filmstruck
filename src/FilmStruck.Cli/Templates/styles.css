@@ -19,6 +19,32 @@ body {
 .heart {
   color: black;
 }
+#hearts-section {
+  margin-top: 40px;
+  padding: 20px;
+  text-align: center;
+  background: red;
+}
+.hearts-header {
+  font-family: monospace;
+  font-size: 18px;
+  color: white;
+  margin-bottom: 15px;
+}
+#hearts-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+#hearts-grid img {
+  transition: transform 0.2s ease;
+}
+#hearts-grid img:hover {
+  transform: scale(1.5);
+  z-index: 10;
+  position: relative;
+}
 .filter-section {
   margin-bottom: 20px;
   font-family: monospace;

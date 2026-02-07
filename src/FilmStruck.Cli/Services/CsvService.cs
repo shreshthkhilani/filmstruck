@@ -9,6 +9,7 @@ public class CsvService
     public string LogPath { get; }
     public string FilmsPath { get; }
     public string StatsPath { get; }
+    public string HeartsPath { get; }
 
     public CsvService()
     {
@@ -16,6 +17,7 @@ public class CsvService
         LogPath = Path.Combine(_repoRoot, "data", "log.csv");
         FilmsPath = Path.Combine(_repoRoot, "data", "films.csv");
         StatsPath = Path.Combine(_repoRoot, "data", "stats.csv");
+        HeartsPath = Path.Combine(_repoRoot, "data", "hearts.csv");
     }
 
     private static string FindRepoRoot(string startDir)
@@ -59,6 +61,36 @@ public class CsvService
             }
         }
         return approved;
+    }
+
+    public async Task<HashSet<int>> LoadHeartsAsync()
+    {
+        var hearts = new HashSet<int>();
+        if (!File.Exists(HeartsPath)) return hearts;
+
+        var lines = await File.ReadAllLinesAsync(HeartsPath);
+        for (int i = 1; i < lines.Length; i++)
+        {
+            if (string.IsNullOrWhiteSpace(lines[i])) continue;
+            if (int.TryParse(lines[i].Trim(), out int tmdbId))
+            {
+                hearts.Add(tmdbId);
+            }
+        }
+        return hearts;
+    }
+
+    public async Task WriteHeartsAsync(HashSet<int> hearts)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("tmdbId");
+
+        foreach (var id in hearts.OrderBy(id => id))
+        {
+            sb.AppendLine(id.ToString());
+        }
+
+        await File.WriteAllTextAsync(HeartsPath, sb.ToString());
     }
 
     public async Task WriteLogAsync(List<Film> films)
