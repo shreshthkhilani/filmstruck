@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  build-and-test:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -18,7 +19,31 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Run tests
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Run unit tests
+        run: make unit-test
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Build
+        run: dotnet build src/FilmStruck.Cli/FilmStruck.Cli.csproj
+
+      - name: Run integration tests
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-        run: make test
+        run: make integration-test
