@@ -145,6 +145,34 @@ The command will:
 - Prompt for location (with recent location suggestions) and companions
 - Save to `log.csv` and `films.csv`, then recalculate stats
 
+### `filmstruck hearts`
+
+Manage your favorite films. Favorites are stored in `data/hearts.csv` and displayed in a dedicated section on your site.
+
+#### `filmstruck hearts add`
+
+Add a film to your favorites.
+
+```bash
+# Interactive: select from your logged films
+filmstruck hearts add
+
+# Direct: add by TMDB ID
+filmstruck hearts add --tmdb-id 550
+```
+
+#### `filmstruck hearts remove`
+
+Remove a film from your favorites.
+
+```bash
+# Interactive: select from your favorites
+filmstruck hearts remove
+
+# Direct: remove by TMDB ID
+filmstruck hearts remove --tmdb-id 550
+```
+
 ## Configuration
 
 Configuration is stored in `filmstruck.json`:
