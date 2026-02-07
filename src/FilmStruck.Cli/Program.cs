@@ -1,4 +1,5 @@
 using FilmStruck.Cli.Commands;
+using FilmStruck.Cli.Commands.Hearts;
 using Spectre.Console.Cli;
 
 var app = new CommandApp();
@@ -24,6 +25,17 @@ app.Configure(config =>
 
     config.AddCommand<ImportLetterboxdCommand>("import-letterboxd-diary")
         .WithDescription("Import films from Letterboxd diary CSV export");
+
+    config.AddBranch<HeartsSettings>("hearts", hearts =>
+    {
+        hearts.SetDescription("Manage favorite films");
+
+        hearts.AddCommand<HeartsAddCommand>("add")
+            .WithDescription("Add a film to favorites");
+
+        hearts.AddCommand<HeartsRemoveCommand>("remove")
+            .WithDescription("Remove a film from favorites");
+    });
 });
 
 return await app.RunAsync(args);
