@@ -1,8 +1,10 @@
 name: Publish to NuGet
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
+      - 'release/*'
   workflow_dispatch:
     inputs:
       version:
@@ -10,8 +12,69 @@ on:
         required: true
 
 jobs:
-  publish:
+  publish-stable:
+    name: Publish Stable Release
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Extract version from csproj
+        id: version
+        run: |
+          VERSION=$(grep -oP '<Version>\K[^<]+' src/FilmStruck.Cli/FilmStruck.Cli.csproj)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Check if tag exists
+        id: tag-check
+        run: |
+          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag v${{ steps.version.outputs.version }} already exists, skipping publish"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag v${{ steps.version.outputs.version }} does not exist, will publish"
+          fi
+
+      - name: Pack
+        if: steps.tag-check.outputs.exists == 'false'
+        run: |
+          dotnet pack src/FilmStruck.Cli/FilmStruck.Cli.csproj \
+            --configuration Release \
+            -p:Version=${{ steps.version.outputs.version }} \
+            --output ./artifacts
+
+      - name: Push to NuGet
+        if: steps.tag-check.outputs.exists == 'false'
+        run: |
+          dotnet nuget push ./artifacts/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+      - name: Create GitHub Release
+        if: steps.tag-check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --title "v${{ steps.version.outputs.version }}" \
+            --generate-notes \
+            --latest
+
+  publish-prerelease:
+    name: Publish Pre-release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/release/') && github.event_name == 'push'
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,23 +82,54 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Determine version
+      - name: Extract version and generate pre-release version
         id: version
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
-            # Remove 'v' prefix if present
-            VERSION="${VERSION#v}"
-          else
-            VERSION="${{ github.event.inputs.version }}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          BASE_VERSION=$(grep -oP '<Version>\K[^<]+' src/FilmStruck.Cli/FilmStruck.Cli.csproj)
+          PRERELEASE_VERSION="${BASE_VERSION}-rc.${{ github.run_number }}"
+          echo "version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "Generated pre-release version: $PRERELEASE_VERSION"
 
       - name: Pack
         run: |
           dotnet pack src/FilmStruck.Cli/FilmStruck.Cli.csproj \
             --configuration Release \
             -p:Version=${{ steps.version.outputs.version }} \
+            --output ./artifacts
+
+      - name: Push to NuGet
+        run: |
+          dotnet nuget push ./artifacts/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+      - name: Create GitHub Pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --title "v${{ steps.version.outputs.version }}" \
+            --generate-notes \
+            --prerelease
+
+  publish-manual:
+    name: Publish Manual Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Pack
+        run: |
+          dotnet pack src/FilmStruck.Cli/FilmStruck.Cli.csproj \
+            --configuration Release \
+            -p:Version=${{ github.event.inputs.version }} \
             --output ./artifacts
 
       - name: Push to NuGet
