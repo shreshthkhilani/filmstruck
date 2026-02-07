@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.0] - 2026-02-07
+
+### Added
+- **Hearts (favorites)**: New `filmstruck hearts add` and `filmstruck hearts remove` commands to mark films as favorites. Hearted films appear in a dedicated section on your generated site.
+
+
 All notable changes to FilmStruck CLI will be documented in this file.
 
 ## [1.2.0] - 2026-02-01
