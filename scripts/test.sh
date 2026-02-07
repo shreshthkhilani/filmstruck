@@ -165,4 +165,15 @@ else
     fail "build: index.html not generated"
 fi
 
+# Test 5: hearts commands (add and remove favorites)
+rm -f data/hearts.csv
+run_command hearts add --tmdb-id 238 >/dev/null 2>&1 || true
+run_command hearts add --tmdb-id 680 >/dev/null 2>&1 || true
+run_command hearts remove --tmdb-id 238 >/dev/null 2>&1 || true
+if [ -f "data/hearts.csv" ] && grep -q "680" data/hearts.csv && ! grep -q "238" data/hearts.csv; then
+    pass "hearts"
+else
+    fail "hearts: expected 680 in hearts.csv and 238 removed"
+fi
+
 print_summary
