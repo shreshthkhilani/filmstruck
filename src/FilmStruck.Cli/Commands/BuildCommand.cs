@@ -25,6 +25,7 @@ public class BuildCommand : AsyncCommand<BuildCommand.Settings>
         // Load data
         var log = await csvService.LoadLogAsync();
         var films = await csvService.LoadApprovedFilmsAsync();
+        var hearts = await csvService.LoadHeartsAsync();
 
         // Transform to view models
         var watchedFilms = JoinLogWithFilms(log, films);
@@ -32,9 +33,13 @@ public class BuildCommand : AsyncCommand<BuildCommand.Settings>
 
         AnsiConsole.MarkupLine($"[dim]Found {watchedFilms.Count} films with metadata[/]");
         AnsiConsole.MarkupLine($"[dim]Found {companions.Count} unique companions[/]");
+        if (hearts.Count > 0)
+        {
+            AnsiConsole.MarkupLine($"[dim]Found {hearts.Count} hearted films[/]");
+        }
 
         // Generate HTML
-        var html = generator.GenerateHtml(watchedFilms, companions, config);
+        var html = generator.GenerateHtml(watchedFilms, companions, hearts, config);
 
         // Write output
         var outputPath = Path.Combine(csvService.RepoRoot, "index.html");
