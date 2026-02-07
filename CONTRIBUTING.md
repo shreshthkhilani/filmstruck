@@ -34,17 +34,25 @@ Thank you for your interest in contributing to FilmStruck!
 To test as a global tool:
 
 ```bash
+make reinstall
+```
+
+Or manually:
+```bash
 cd src/FilmStruck.Cli
 dotnet pack
 dotnet tool install --global --add-source ./nupkg FilmStruck.Cli
 ```
 
-To update after changes:
+### Development Commands
+
 ```bash
-cd src/FilmStruck.Cli
-dotnet tool uninstall --global FilmStruck.Cli
-dotnet pack
-dotnet tool install --global --add-source ./nupkg FilmStruck.Cli
+make build      # Build the CLI
+make test       # Run integration tests
+make clean      # Clean build artifacts
+make reinstall  # Reinstall CLI globally
+make release VERSION=1.3.0  # Prepare a new release
+make help       # Show all commands
 ```
 
 ## Project Structure
@@ -108,6 +116,7 @@ Placeholders:
    config.AddCommand<YourCommand>("yourcommand")
        .WithDescription("Description here");
    ```
+4. **Add integration tests** in `scripts/test.sh` (see Testing section)
 
 ### Modifying the Site Output
 
@@ -128,21 +137,33 @@ Placeholders:
 
 ## Testing
 
-Currently there are no automated tests. Manual testing:
+Run the integration test suite:
 
 ```bash
-# Create a test directory
-mkdir /tmp/test-fs && cd /tmp/test-fs && git init
-
-# Test init
-dotnet run --project /path/to/filmstruck/src/FilmStruck.Cli -- init -u testuser
-
-# Test build (should work with empty data)
-dotnet run --project /path/to/filmstruck/src/FilmStruck.Cli -- build
-
-# Verify output
-open index.html  # Should show "testuser" as the username
+make test
 ```
+
+The test suite:
+- Dynamically creates a test site with sample data
+- Runs `enrich`, `calculate`, `add`, and `build` commands
+- Validates expected outputs (files created, data updated)
+- Cleans up automatically
+
+Tests requiring TMDB API access are skipped if `TMDB_API_KEY` is not set. To run the full suite:
+
+```bash
+export TMDB_API_KEY="your-api-key"
+make test
+```
+
+### Adding Integration Tests
+
+**All new commands must have integration tests.** When adding a command:
+
+1. Add a test section in `scripts/test.sh`
+2. Test both success and expected outputs
+3. Use non-interactive flags for CI compatibility
+4. Verify file changes where applicable
 
 ## Submitting Changes
 

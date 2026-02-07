@@ -28,6 +28,21 @@ dotnet tool install --global --add-source ./nupkg FilmStruck.Cli
 
 **Environment:** Requires `TMDB_API_KEY` environment variable for TMDB commands.
 
+## Development Commands
+
+Use `make` for all development tasks:
+
+```bash
+make build      # Build the CLI
+make test       # Run integration tests
+make clean      # Clean build artifacts
+make reinstall  # Reinstall CLI globally
+make release VERSION=1.3.0  # Prepare a new release
+make help       # Show available commands
+```
+
+The test suite dynamically generates a test site, runs CLI commands against it, and cleans up afterward. Tests run with or without `TMDB_API_KEY` (TMDB-dependent tests are skipped if not set).
+
 ## Architecture
 
 FilmStruck is a .NET 9 CLI tool (Spectre.Console.Cli) that helps users track films with TMDB integration and generates a static site for GitHub Pages.
@@ -57,6 +72,7 @@ User → CLI commands → TMDB API → CSV files (data/) → CLI build → index
 
 1. Create `src/FilmStruck.Cli/Commands/YourCommand.cs` implementing `AsyncCommand<YourCommand.Settings>`
 2. Register in `Program.cs`: `config.AddCommand<YourCommand>("yourcommand").WithDescription("...");`
+3. **Add integration tests** in `scripts/test.sh` to verify the command works end-to-end
 
 ### Data Files
 
