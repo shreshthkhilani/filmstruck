@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using FilmStruck.Cli.Services;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -8,6 +9,9 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
 {
     public class Settings : CommandSettings
     {
+        [CommandOption("--default-poster")]
+        [Description("Use the default poster without prompting")]
+        public bool DefaultPoster { get; set; }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
@@ -33,7 +37,7 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
         AnsiConsole.MarkupLine($"Loaded [bold]{approvedFilms.Count}[/] approved films\n");
 
         // Sync films that have tmdbId but are missing from films.csv
-        await SyncMissingApprovedFilmsAsync(films, approvedFilms, tmdbService, csvService, posterService);
+        await SyncMissingApprovedFilmsAsync(films, approvedFilms, tmdbService, csvService, posterService, settings.DefaultPoster);
 
         // Process films without tmdbId
         var filmsToProcess = films.Where(f => f.TmdbId == null).ToList();
@@ -121,16 +125,19 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
                 );
 
                 // Poster selection
-                var posters = await tmdbService.GetMoviePostersAsync(selectedOption.Movie.Id);
-                if (posters.Count > 1)
+                if (!settings.DefaultPoster)
                 {
-                    var selectedPoster = posterService.SelectPoster(
-                        approved.Title,
-                        approved.ReleaseYear,
-                        selectedOption.Movie.Id,
-                        posters,
-                        approved.PosterPath);
-                    approved = approved with { PosterPath = selectedPoster };
+                    var posters = await tmdbService.GetMoviePostersAsync(selectedOption.Movie.Id);
+                    if (posters.Count > 1)
+                    {
+                        var selectedPoster = posterService.SelectPoster(
+                            approved.Title,
+                            approved.ReleaseYear,
+                            selectedOption.Movie.Id,
+                            posters,
+                            approved.PosterPath);
+                        approved = approved with { PosterPath = selectedPoster };
+                    }
                 }
 
                 approvedFilms[selectedOption.Movie.Id] = approved;
@@ -153,7 +160,8 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
         Dictionary<int, ApprovedFilm> approvedFilms,
         TmdbService tmdbService,
         CsvService csvService,
-        PosterSelectionService posterService)
+        PosterSelectionService posterService,
+        bool defaultPoster)
     {
         var filmsWithIdButNotApproved = films
             .Where(f => f.TmdbId.HasValue && !approvedFilms.ContainsKey(f.TmdbId.Value))
@@ -173,16 +181,19 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
             if (approved != null)
             {
                 // Poster selection
-                var posters = await tmdbService.GetMoviePostersAsync(film.TmdbId.Value);
-                if (posters.Count > 1)
+                if (!defaultPoster)
                 {
-                    var selectedPoster = posterService.SelectPoster(
-                        approved.Title,
-                        approved.ReleaseYear,
-                        film.TmdbId.Value,
-                        posters,
-                        approved.PosterPath);
-                    approved = approved with { PosterPath = selectedPoster };
+                    var posters = await tmdbService.GetMoviePostersAsync(film.TmdbId.Value);
+                    if (posters.Count > 1)
+                    {
+                        var selectedPoster = posterService.SelectPoster(
+                            approved.Title,
+                            approved.ReleaseYear,
+                            film.TmdbId.Value,
+                            posters,
+                            approved.PosterPath);
+                        approved = approved with { PosterPath = selectedPoster };
+                    }
                 }
 
                 approvedFilms[film.TmdbId.Value] = approved;
