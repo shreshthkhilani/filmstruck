@@ -29,14 +29,77 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Extract version from csproj
+      - name: Get merged PR number
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list --state merged --base main --json number,mergeCommit \
+            --jq ".[] | select(.mergeCommit.oid == \"${{ github.sha }}\") | .number")
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "Merged PR: #$PR_NUMBER"
+
+      - name: Get PR labels
+        id: labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "${{ steps.pr.outputs.number }}" ]; then
+            echo "No PR found, defaulting to patch"
+            echo "bump=patch" >> $GITHUB_OUTPUT
+          else
+            LABELS=$(gh pr view ${{ steps.pr.outputs.number }} --json labels --jq '.labels[].name')
+            echo "PR labels: $LABELS"
+
+            if echo "$LABELS" | grep -q "^major$"; then
+              echo "bump=major" >> $GITHUB_OUTPUT
+            elif echo "$LABELS" | grep -q "^minor$"; then
+              echo "bump=minor" >> $GITHUB_OUTPUT
+            else
+              echo "bump=patch" >> $GITHUB_OUTPUT
+            fi
+          fi
+          echo "Bump type: $(cat $GITHUB_OUTPUT | grep bump | cut -d= -f2)"
+
+      - name: Get latest version from git tags
+        id: latest
+        run: |
+          # Get the latest version tag, default to v0.0.0 if none exist
+          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_VERSION="0.0.0"
+          else
+            LATEST_VERSION="${LATEST_TAG#v}"
+          fi
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "Latest version: $LATEST_VERSION"
+
+      - name: Calculate next version
         id: version
         run: |
-          VERSION=$(grep -oP '<Version>\K[^<]+' src/FilmStruck.Cli/FilmStruck.Cli.csproj)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Extracted version: $VERSION"
+          CURRENT="${{ steps.latest.outputs.version }}"
+          BUMP="${{ steps.labels.outputs.bump }}"
 
-      - name: Check if tag exists
+          # Parse current version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          # Calculate next version based on bump type
+          case "$BUMP" in
+            major)
+              NEXT="$((MAJOR + 1)).0.0"
+              ;;
+            minor)
+              NEXT="$MAJOR.$((MINOR + 1)).0"
+              ;;
+            patch)
+              NEXT="$MAJOR.$MINOR.$((PATCH + 1))"
+              ;;
+          esac
+
+          echo "version=$NEXT" >> $GITHUB_OUTPUT
+          echo "Version bump: $CURRENT -> $NEXT ($BUMP)"
+
+      - name: Check if tag already exists
         id: tag-check
         run: |
           if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
@@ -80,15 +143,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
 
-      - name: Extract version and generate pre-release version
+      - name: Get latest version and generate pre-release version
         id: version
         run: |
-          BASE_VERSION=$(grep -oP '<Version>\K[^<]+' src/FilmStruck.Cli/FilmStruck.Cli.csproj)
+          # Get the latest version tag, default to v0.0.0 if none exist
+          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$LATEST_TAG" ]; then
+            BASE_VERSION="0.0.0"
+          else
+            BASE_VERSION="${LATEST_TAG#v}"
+          fi
           PRERELEASE_VERSION="${BASE_VERSION}-rc.${{ github.run_number }}"
           echo "version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
           echo "Generated pre-release version: $PRERELEASE_VERSION"
