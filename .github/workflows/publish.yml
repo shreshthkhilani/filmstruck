@@ -2,23 +2,31 @@ name: Publish to NuGet
 
 on:
   push:
-    branches:
-      - main
-      - 'release/*'
+    branches: [main]
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to publish (e.g., 1.0.1)'
+      bump_type:
+        description: 'Version bump type'
         required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
 
 jobs:
-  publish-stable:
-    name: Publish Stable Release
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  publish:
+    name: Publish
+    needs: ci
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
@@ -29,89 +37,63 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Get merged PR number
-        id: pr
+      - name: Determine version bump type
+        id: bump
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_NUMBER=$(gh pr list --state merged --base main --json number,mergeCommit \
-            --jq ".[] | select(.mergeCommit.oid == \"${{ github.sha }}\") | .number")
-          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "Merged PR: #$PR_NUMBER"
-
-      - name: Get PR labels
-        id: labels
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ -z "${{ steps.pr.outputs.number }}" ]; then
-            echo "No PR found, defaulting to patch"
-            echo "bump=patch" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual trigger - use input
+            echo "type=${{ github.event.inputs.bump_type }}" >> $GITHUB_OUTPUT
           else
-            LABELS=$(gh pr view ${{ steps.pr.outputs.number }} --json labels --jq '.labels[].name')
-            echo "PR labels: $LABELS"
+            # Push to main - get from merged PR labels
+            PR_NUMBER=$(gh pr list --state merged --base main --json number,mergeCommit \
+              --jq ".[] | select(.mergeCommit.oid == \"${{ github.sha }}\") | .number")
 
-            if echo "$LABELS" | grep -q "^major$"; then
-              echo "bump=major" >> $GITHUB_OUTPUT
-            elif echo "$LABELS" | grep -q "^minor$"; then
-              echo "bump=minor" >> $GITHUB_OUTPUT
+            if [ -z "$PR_NUMBER" ]; then
+              echo "type=patch" >> $GITHUB_OUTPUT
             else
-              echo "bump=patch" >> $GITHUB_OUTPUT
+              LABELS=$(gh pr view $PR_NUMBER --json labels --jq '.labels[].name')
+              if echo "$LABELS" | grep -q "^major$"; then
+                echo "type=major" >> $GITHUB_OUTPUT
+              elif echo "$LABELS" | grep -q "^minor$"; then
+                echo "type=minor" >> $GITHUB_OUTPUT
+              else
+                echo "type=patch" >> $GITHUB_OUTPUT
+              fi
             fi
           fi
-          echo "Bump type: $(cat $GITHUB_OUTPUT | grep bump | cut -d= -f2)"
 
-      - name: Get latest version from git tags
-        id: latest
-        run: |
-          # Get the latest version tag, default to v0.0.0 if none exist
-          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
-          if [ -z "$LATEST_TAG" ]; then
-            LATEST_VERSION="0.0.0"
-          else
-            LATEST_VERSION="${LATEST_TAG#v}"
-          fi
-          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-          echo "Latest version: $LATEST_VERSION"
-
-      - name: Calculate next version
+      - name: Calculate version
         id: version
         run: |
-          CURRENT="${{ steps.latest.outputs.version }}"
-          BUMP="${{ steps.labels.outputs.bump }}"
+          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          CURRENT="${LATEST_TAG#v}"
+          [ -z "$CURRENT" ] && CURRENT="0.0.0"
 
-          # Parse current version
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
 
-          # Calculate next version based on bump type
-          case "$BUMP" in
-            major)
-              NEXT="$((MAJOR + 1)).0.0"
-              ;;
-            minor)
-              NEXT="$MAJOR.$((MINOR + 1)).0"
-              ;;
-            patch)
-              NEXT="$MAJOR.$MINOR.$((PATCH + 1))"
-              ;;
+          case "${{ steps.bump.outputs.type }}" in
+            major) NEXT="$((MAJOR + 1)).0.0" ;;
+            minor) NEXT="$MAJOR.$((MINOR + 1)).0" ;;
+            patch) NEXT="$MAJOR.$MINOR.$((PATCH + 1))" ;;
           esac
 
           echo "version=$NEXT" >> $GITHUB_OUTPUT
-          echo "Version bump: $CURRENT -> $NEXT ($BUMP)"
+          echo "Version: $CURRENT -> $NEXT (${{ steps.bump.outputs.type }})"
 
-      - name: Check if tag already exists
-        id: tag-check
+      - name: Check if tag exists
+        id: check
         run: |
           if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "Tag v${{ steps.version.outputs.version }} already exists, skipping publish"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
-            echo "Tag v${{ steps.version.outputs.version }} does not exist, will publish"
           fi
 
       - name: Pack
-        if: steps.tag-check.outputs.exists == 'false'
+        if: steps.check.outputs.exists == 'false'
         run: |
           dotnet pack src/FilmStruck.Cli/FilmStruck.Cli.csproj \
             --configuration Release \
@@ -119,7 +101,7 @@ jobs:
             --output ./artifacts
 
       - name: Push to NuGet
-        if: steps.tag-check.outputs.exists == 'false'
+        if: steps.check.outputs.exists == 'false'
         run: |
           dotnet nuget push ./artifacts/*.nupkg \
             --api-key ${{ secrets.NUGET_API_KEY }} \
@@ -127,7 +109,7 @@ jobs:
             --skip-duplicate
 
       - name: Create GitHub Release
-        if: steps.tag-check.outputs.exists == 'false'
+        if: steps.check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -135,80 +117,3 @@ jobs:
             --title "v${{ steps.version.outputs.version }}" \
             --generate-notes \
             --latest
-
-  publish-prerelease:
-    name: Publish Pre-release
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/heads/release/') && github.event_name == 'push'
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Get latest version and generate pre-release version
-        id: version
-        run: |
-          # Get the latest version tag, default to v0.0.0 if none exist
-          LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
-          if [ -z "$LATEST_TAG" ]; then
-            BASE_VERSION="0.0.0"
-          else
-            BASE_VERSION="${LATEST_TAG#v}"
-          fi
-          PRERELEASE_VERSION="${BASE_VERSION}-rc.${{ github.run_number }}"
-          echo "version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
-          echo "Generated pre-release version: $PRERELEASE_VERSION"
-
-      - name: Pack
-        run: |
-          dotnet pack src/FilmStruck.Cli/FilmStruck.Cli.csproj \
-            --configuration Release \
-            -p:Version=${{ steps.version.outputs.version }} \
-            --output ./artifacts
-
-      - name: Push to NuGet
-        run: |
-          dotnet nuget push ./artifacts/*.nupkg \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
-            --source https://api.nuget.org/v3/index.json \
-            --skip-duplicate
-
-      - name: Create GitHub Pre-release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "v${{ steps.version.outputs.version }}" \
-            --title "v${{ steps.version.outputs.version }}" \
-            --generate-notes \
-            --prerelease
-
-  publish-manual:
-    name: Publish Manual Release
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Pack
-        run: |
-          dotnet pack src/FilmStruck.Cli/FilmStruck.Cli.csproj \
-            --configuration Release \
-            -p:Version=${{ github.event.inputs.version }} \
-            --output ./artifacts
-
-      - name: Push to NuGet
-        run: |
-          dotnet nuget push ./artifacts/*.nupkg \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
-            --source https://api.nuget.org/v3/index.json \
-            --skip-duplicate

@@ -91,8 +91,7 @@ Examples: `feature/import-letterboxd`, `bugfix/csv-parsing`, `chore/update-deps`
 Version is derived from git tags, not from .csproj. Publishing is fully automated:
 
 - **Merge to main**: Auto-calculates version from PR labels, publishes to NuGet, creates GitHub Release
-- **Push to `release/*`**: Publishes pre-release versions (`{latest-tag}-rc.{run_number}`)
-- **Manual dispatch**: Allows publishing a specific version via workflow_dispatch
+- **Manual dispatch**: Select bump type (patch/minor/major) to publish the next version
 
 ### PR Labels for Version Control
 
@@ -109,9 +108,18 @@ If no label is specified, defaults to `patch`.
 ### Developer Workflow
 
 1. Create feature branch, make changes
-2. Open PR to `main`
-3. Add label: `patch`, `minor`, or `major` (optional, defaults to `patch`)
-4. CI runs tests
-5. Merge → auto-calculates version, publishes to NuGet, creates GitHub Release
+2. Open PR to `main` with a version label: `patch`, `minor`, or `major`
+3. CI runs tests on PR
+4. Merge → CI runs again via publish workflow → auto-calculates version, publishes to NuGet, creates GitHub Release
+
+**Important:** Always add a version label (`patch`, `minor`, or `major`) when creating a PR.
+
+### Manual Release
+
+Use the workflow_dispatch trigger to manually publish:
+1. Go to Actions → "Publish to NuGet"
+2. Click "Run workflow"
+3. Select bump type (patch/minor/major)
+4. The workflow calculates the next version, runs tests, publishes, and creates a GitHub Release
 
 No manual version editing required.
