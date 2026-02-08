@@ -88,8 +88,30 @@ Examples: `feature/import-letterboxd`, `bugfix/csv-parsing`, `chore/update-deps`
 
 ## NuGet Publishing
 
-Version is in `src/FilmStruck.Cli/FilmStruck.Cli.csproj` (`<Version>` element). Publishing is fully automated:
+Version is derived from git tags, not from .csproj. Publishing is fully automated:
 
-- **PRs to main**: Must include a version bump (enforced by `version-check.yml`)
-- **Merge to main**: Auto-publishes to NuGet and creates a GitHub Release with auto-generated notes
-- **Push to `release/*`**: Publishes pre-release versions (`{version}-rc.{run_number}`)
+- **Merge to main**: Auto-calculates version from PR labels, publishes to NuGet, creates GitHub Release
+- **Push to `release/*`**: Publishes pre-release versions (`{latest-tag}-rc.{run_number}`)
+- **Manual dispatch**: Allows publishing a specific version via workflow_dispatch
+
+### PR Labels for Version Control
+
+Add one of these labels to your PR to control the version bump:
+
+| Label | Effect | Example |
+|-------|--------|---------|
+| `patch` (default) | Bug fixes, small changes | 1.3.2 → 1.3.3 |
+| `minor` | New features | 1.3.2 → 1.4.0 |
+| `major` | Breaking changes | 1.3.2 → 2.0.0 |
+
+If no label is specified, defaults to `patch`.
+
+### Developer Workflow
+
+1. Create feature branch, make changes
+2. Open PR to `main`
+3. Add label: `patch`, `minor`, or `major` (optional, defaults to `patch`)
+4. CI runs tests
+5. Merge → auto-calculates version, publishes to NuGet, creates GitHub Release
+
+No manual version editing required.
