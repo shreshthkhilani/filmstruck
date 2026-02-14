@@ -1,3 +1,4 @@
+import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -31,10 +32,20 @@ export class FilmStruckStack extends cdk.Stack {
     });
 
     // Lambda function
+    const apiProjectDir = path.join(__dirname, '../../src/FilmStruck.Api');
     const fn = new lambda.Function(this, 'ApiFunction', {
       runtime: lambda.Runtime.DOTNET_8,
       handler: 'FilmStruck.Api',
-      code: lambda.Code.fromAsset('../src/FilmStruck.Api/bin/Release/net9.0/linux-x64/publish'),
+      code: lambda.Code.fromAsset(apiProjectDir, {
+        bundling: {
+          image: lambda.Runtime.DOTNET_8.bundlingImage,
+          command: [
+            'bash', '-c',
+            'dotnet publish -c Release -r linux-x64 --self-contained -o /asset-output',
+          ],
+          user: 'root',
+        },
+      }),
       memorySize: config.lambdaMemoryMb,
       timeout: cdk.Duration.seconds(30),
       environment: {
