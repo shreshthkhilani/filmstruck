@@ -8,6 +8,9 @@ Thank you for your interest in contributing to FilmStruck!
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - A TMDB API key from [themoviedb.org](https://www.themoviedb.org/settings/api)
+- [Docker](https://docs.docker.com/get-docker/) (for local API development)
+- [Node.js](https://nodejs.org/) (for CDK infrastructure, optional)
+- [AWS CLI](https://aws.amazon.com/cli/) (for local DynamoDB seeding and deployments, optional)
 
 ### Getting Started
 
@@ -47,11 +50,23 @@ dotnet tool install --global --add-source ./nupkg FilmStruck.Cli
 ### Development Commands
 
 ```bash
+# CLI
 make build      # Build the CLI
-make test       # Run integration tests
+make test       # Run all tests (unit + integration)
 make clean      # Clean build artifacts
 make reinstall  # Reinstall CLI globally
-make release VERSION=1.3.0  # Prepare a new release
+
+# API
+make api-build  # Build the API project
+make api-run    # Run API locally (needs DynamoDB Local)
+make local-up   # Start DynamoDB Local + seed test data
+
+# Infrastructure
+make infra-install        # Install CDK dependencies
+make infra-synth          # Synthesize CloudFormation template
+make infra-deploy-staging # Deploy to staging
+make infra-deploy-prod    # Deploy to production
+
 make help       # Show all commands
 ```
 
@@ -60,15 +75,27 @@ make help       # Show all commands
 ```
 filmstruck/
 ├── src/
-│   └── FilmStruck.Cli/
-│       ├── Commands/           # CLI command implementations
-│       ├── Services/           # Business logic
-│       ├── Templates/          # HTML/CSS/JS templates (embedded)
-│       ├── Resources/          # Init templates (embedded)
-│       └── Program.cs          # Entry point
+│   ├── FilmStruck.Cli/
+│   │   ├── Commands/           # CLI command implementations
+│   │   ├── Services/           # Business logic
+│   │   ├── Templates/          # HTML/CSS/JS templates (embedded)
+│   │   ├── Resources/          # Init templates (embedded)
+│   │   └── Program.cs          # Entry point
+│   └── FilmStruck.Api/
+│       ├── Models/             # DynamoDB item models and API DTOs
+│       ├── Services/           # WatchLogService (DDB query + join)
+│       └── Program.cs          # Minimal API entry point
+├── infra/
+│   ├── bin/app.ts              # CDK app entry point
+│   ├── lib/filmstruck-stack.ts # CDK stack (DDB, Lambda, API GW, DNS)
+│   └── config/environments.ts  # Staging/prod environment configs
+├── scripts/
+│   ├── test.sh                 # Integration tests
+│   └── local-setup.sh          # Create DDB table + seed data locally
 ├── .github/
 │   └── workflows/
 │       └── publish.yml         # Publishes to NuGet
+├── docker-compose.yml          # DynamoDB Local for development
 ├── docs/                       # Documentation
 └── README.md
 ```
@@ -90,6 +117,20 @@ filmstruck/
 - `TmdbService.cs` - TMDB API integration
 - `SiteGeneratorService.cs` - HTML generation from templates
 
+### API (FilmStruck.Api)
+
+- `Program.cs` - Minimal API with `GET /api/{username}` route, DynamoDB client registration, Lambda hosting
+- `Services/WatchLogService.cs` - Queries DynamoDB, splits items by SortKey prefix (`Log#` vs `Film#`), joins log entries with film metadata
+- `Models/LogItem.cs` - DynamoDB log record model
+- `Models/FilmItem.cs` - DynamoDB film metadata model
+- `Models/LogResponse.cs` - API response DTOs
+
+### Infrastructure (infra/)
+
+- `bin/app.ts` - CDK app entry point, reads environment from context
+- `lib/filmstruck-stack.ts` - CDK stack: DynamoDB table, Lambda function, API Gateway, Route 53, ACM certificate
+- `config/environments.ts` - Staging and prod environment configurations
+
 ### Templates
 
 Templates are embedded resources that get compiled into the DLL:
@@ -104,6 +145,30 @@ Placeholders:
 - `{{FILMS_DATA}}` - JSON array of films
 - `{{COMPANIONS_DATA}}` - JSON array of companions
 - `{{APP_JS}}` - JavaScript content
+
+## Local API Development
+
+1. **Start DynamoDB Local:**
+   ```bash
+   docker compose up -d
+   ```
+
+2. **Create table and seed test data:**
+   ```bash
+   ./scripts/local-setup.sh
+   ```
+
+3. **Run the API:**
+   ```bash
+   make api-run
+   ```
+
+4. **Test the endpoint:**
+   ```bash
+   curl http://localhost:5000/api/testuser
+   ```
+
+The API reads `AWS_ENDPOINT_URL` to connect to DynamoDB Local and `TABLE_NAME` for the table name. Both are set automatically by `make api-run`.
 
 ## Making Changes
 

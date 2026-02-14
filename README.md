@@ -254,9 +254,42 @@ See a fully populated example at [s4s-filmstruck](https://github.com/shreshthkhi
 - Companion filtering in action
 - Custom favicon example
 
+## API
+
+FilmStruck also provides a public API for accessing watch log data, backed by AWS Lambda and DynamoDB.
+
+### `GET /api/{username}`
+
+Returns a user's enriched watch log (log entries joined with TMDB film metadata), sorted newest-first.
+
+**Production:** `https://filmstruck.net/api/{username}`
+**Staging:** `https://staging.filmstruck.net/api/{username}`
+
+Example response:
+
+```json
+{
+  "username": "alice",
+  "count": 2,
+  "entries": [
+    {
+      "date": "2/10/2025",
+      "title": "Pulp Fiction",
+      "location": "Home",
+      "companions": "Bob",
+      "tmdbId": "680",
+      "director": "Quentin Tarantino",
+      "releaseYear": "1994",
+      "language": "en",
+      "posterPath": "/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg"
+    }
+  ]
+}
+```
+
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for information on developing the CLI.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for information on developing the CLI and API.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical specification.
 
