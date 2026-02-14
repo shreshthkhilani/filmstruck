@@ -80,6 +80,48 @@ User → CLI commands → TMDB API → CSV files (data/) → CLI build → index
 - `data/stats.csv` - Aggregated statistics
 - `filmstruck.json` - Configuration: username, siteTitle
 
+## API (FilmStruck.Api)
+
+A .NET 9 minimal API that runs as an AWS Lambda behind API Gateway. Provides a `GET /api/{username}` endpoint that returns enriched watch log data from DynamoDB.
+
+### API Development
+
+```bash
+make api-build    # Build the API project
+make api-run      # Run API locally (requires DynamoDB Local)
+make local-up     # Start DynamoDB Local + seed test data
+```
+
+### Local Development
+
+1. Start DynamoDB Local: `docker compose up -d`
+2. Seed test data: `./scripts/local-setup.sh`
+3. Run API: `make api-run`
+4. Test: `curl http://localhost:5000/api/testuser`
+
+### DynamoDB Table Design
+
+Single table (`filmstruck-{env}`) with `PartitionKey` (username) and `SortKey` (model-type-prefixed):
+- Log entries: `Log#{yyyy-MM-dd}#{tmdbId}`
+- Film metadata: `Film#{tmdbId}`
+
+### AWS Infrastructure (CDK)
+
+Infrastructure is defined in `infra/` using AWS CDK (TypeScript).
+
+```bash
+make infra-install        # Install CDK dependencies
+make infra-synth          # Synthesize CloudFormation template
+make infra-deploy-staging # Deploy to staging
+make infra-deploy-prod    # Deploy to production
+```
+
+**Prerequisites:** `aws configure` with appropriate credentials, `cdk bootstrap` for first-time setup.
+
+**Environments:**
+- **Staging**: `staging.filmstruck.net`, 128MB Lambda, DESTROY removal policy
+- **Prod**: `filmstruck.net`, 256MB Lambda, RETAIN removal policy
+
 ## Git Conventions
 
 Use conventional branch naming: prefix branches with `feature/`, `bugfix/`, `hotfix/`, `release/`, `chore/`, etc.

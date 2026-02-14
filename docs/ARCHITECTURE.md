@@ -1,8 +1,8 @@
-# FilmStruck CLI - Architecture & Technical Specification
+# FilmStruck - Architecture & Technical Specification
 
 ## Overview
 
-FilmStruck is a .NET CLI tool for tracking your film watching history with TMDB integration. It generates a static HTML site that can be deployed to GitHub Pages.
+FilmStruck is a .NET tool for tracking your film watching history with TMDB integration. It includes a CLI that generates a static HTML site for GitHub Pages, and a public API backed by AWS Lambda and DynamoDB.
 
 **Repository:** https://github.com/shreshthkhilani/filmstruck (CLI source code)
 
@@ -385,3 +385,128 @@ Use it as a reference for:
 - Expected CSV format
 - Configuration setup
 - GitHub Actions workflow
+
+---
+
+## API Architecture
+
+### Overview
+
+The FilmStruck API is a .NET 9 minimal API that runs as an AWS Lambda behind API Gateway. It provides a `GET /api/{username}` endpoint returning enriched watch log data from DynamoDB.
+
+### Request Flow
+
+```
+Route 53 (filmstruck.net / staging.filmstruck.net)
+  → API Gateway (REST API, custom domain, ACM cert)
+    → /api/{username} → Lambda (C# minimal API)
+      → DynamoDB (filmstruck-{env})
+```
+
+### Project Structure
+
+```
+src/FilmStruck.Api/
+├── Program.cs                    # Minimal API entry point
+├── Models/
+│   ├── LogItem.cs               # DynamoDB log record model
+│   ├── FilmItem.cs              # DynamoDB film metadata model
+│   └── LogResponse.cs           # API response DTOs
+└── Services/
+    └── WatchLogService.cs       # DDB query + Log/Film join logic
+```
+
+### DynamoDB Table Design
+
+Single table design using `filmstruck-{env}` with composite keys:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| PartitionKey | String | Username (e.g., `shreshth`) |
+| SortKey | String | Model-type-prefixed composite key |
+
+**Model types stored in the table:**
+
+| Model | SortKey Format | Attributes |
+|-------|---------------|------------|
+| Log | `Log#{yyyy-MM-dd}#{tmdbId}` | date, title, location, companions, tmdbId |
+| Film | `Film#{tmdbId}` | tmdbId, title, director, releaseYear, language, posterPath |
+
+Billing mode: PAY_PER_REQUEST (on-demand).
+
+### Query Strategy
+
+The `WatchLogService` performs a single DynamoDB Query for all items where `PartitionKey = {username}`. It then:
+
+1. Separates results by SortKey prefix into Log and Film items
+2. Builds a lookup dictionary of Film items keyed by tmdbId
+3. Joins each Log entry with its corresponding Film metadata
+4. Returns entries sorted by date descending
+
+### API Response
+
+```json
+{
+  "username": "alice",
+  "count": 2,
+  "entries": [
+    {
+      "date": "2/10/2025",
+      "title": "Pulp Fiction",
+      "location": "Home",
+      "companions": "Bob",
+      "tmdbId": "680",
+      "director": "Quentin Tarantino",
+      "releaseYear": "1994",
+      "language": "en",
+      "posterPath": "/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg"
+    }
+  ]
+}
+```
+
+### Local Development
+
+The API supports local development via DynamoDB Local (Docker):
+
+- Set `AWS_ENDPOINT_URL=http://localhost:8000` to use DynamoDB Local
+- Set `TABLE_NAME` to specify which table to query
+- `make api-run` sets both automatically
+- `./scripts/local-setup.sh` creates the table and seeds sample data
+
+---
+
+## AWS Infrastructure (CDK)
+
+Infrastructure is defined in `infra/` using AWS CDK (TypeScript).
+
+### Stack Resources
+
+| Resource | Description |
+|----------|-------------|
+| DynamoDB Table | Single table with PartitionKey + SortKey, on-demand billing |
+| Lambda Function | .NET 9 runtime, reads TABLE_NAME env var |
+| API Gateway | REST API with `/api/{username}` route, CORS enabled |
+| ACM Certificate | `filmstruck.net` + `*.filmstruck.net`, DNS validation |
+| Route 53 Records | A/AAAA alias records pointing to API Gateway custom domain |
+
+### Environments
+
+| Property | Staging | Production |
+|----------|---------|------------|
+| Domain | `staging.filmstruck.net` | `filmstruck.net` |
+| Table | `filmstruck-staging` | `filmstruck-prod` |
+| Lambda memory | 128 MB | 256 MB |
+| Removal policy | DESTROY | RETAIN |
+
+### Deployment
+
+```bash
+# First-time setup
+aws configure
+cd infra && npx cdk bootstrap
+
+# Deploy
+make infra-deploy-staging
+make infra-deploy-prod
+```
