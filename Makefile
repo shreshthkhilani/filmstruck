@@ -32,11 +32,9 @@ infra-synth:
 	cd infra && npx cdk synth -c env=staging
 
 infra-deploy-staging:
-	dotnet publish src/FilmStruck.Api/FilmStruck.Api.csproj -c Release -r linux-x64 --self-contained
 	cd infra && npx cdk deploy -c env=staging
 
 infra-deploy-prod:
-	dotnet publish src/FilmStruck.Api/FilmStruck.Api.csproj -c Release -r linux-x64 --self-contained
 	cd infra && npx cdk deploy -c env=prod
 
 local-up:
