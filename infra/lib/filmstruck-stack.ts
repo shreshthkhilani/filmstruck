@@ -1,4 +1,5 @@
 import * as path from 'path';
+import { execSync } from 'child_process';
 import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -44,6 +45,19 @@ export class FilmStruckStack extends cdk.Stack {
             'dotnet publish -c Release -r linux-x64 --self-contained -o /asset-output',
           ],
           user: 'root',
+          local: {
+            tryBundle(outputDir: string): boolean {
+              try {
+                execSync(
+                  `dotnet publish -c Release -r linux-x64 --self-contained -o "${outputDir}"`,
+                  { cwd: apiProjectDir, stdio: 'inherit' },
+                );
+                return true;
+              } catch {
+                return false;
+              }
+            },
+          },
         },
       }),
       memorySize: config.lambdaMemoryMb,
@@ -70,43 +84,48 @@ export class FilmStruckStack extends cdk.Stack {
     const usernameResource = apiResource.addResource('{username}');
     usernameResource.addMethod('GET', new apigateway.LambdaIntegration(fn));
 
-    // Route 53 hosted zone (lookup existing)
-    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-      domainName: 'filmstruck.net',
-    });
+    // Custom domain + DNS (requires AWS account/region to be configured)
+    const hasAccount = props.env?.account && props.env.account !== cdk.Aws.ACCOUNT_ID;
+    if (hasAccount) {
+      const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+        domainName: 'filmstruck.net',
+      });
 
-    // ACM certificate
-    const certificate = new acm.Certificate(this, 'Certificate', {
-      domainName: 'filmstruck.net',
-      subjectAlternativeNames: ['*.filmstruck.net'],
-      validation: acm.CertificateValidation.fromDns(hostedZone),
-    });
+      const certificate = new acm.Certificate(this, 'Certificate', {
+        domainName: 'filmstruck.net',
+        subjectAlternativeNames: ['*.filmstruck.net'],
+        validation: acm.CertificateValidation.fromDns(hostedZone),
+      });
 
-    // API Gateway custom domain
-    const customDomain = new apigateway.DomainName(this, 'CustomDomain', {
-      domainName: config.domain,
-      certificate,
-      endpointType: apigateway.EndpointType.EDGE,
-    });
+      const customDomain = new apigateway.DomainName(this, 'CustomDomain', {
+        domainName: config.domain,
+        certificate,
+        endpointType: apigateway.EndpointType.EDGE,
+      });
 
-    customDomain.addBasePathMapping(api);
+      customDomain.addBasePathMapping(api);
 
-    // Route 53 alias records
-    new route53.ARecord(this, 'AliasRecord', {
-      zone: hostedZone,
-      recordName: config.domain,
-      target: route53.RecordTarget.fromAlias(
-        new route53Targets.ApiGatewayDomain(customDomain)
-      ),
-    });
+      new route53.ARecord(this, 'AliasRecord', {
+        zone: hostedZone,
+        recordName: config.domain,
+        target: route53.RecordTarget.fromAlias(
+          new route53Targets.ApiGatewayDomain(customDomain)
+        ),
+      });
 
-    new route53.AaaaRecord(this, 'AliasRecordAAAA', {
-      zone: hostedZone,
-      recordName: config.domain,
-      target: route53.RecordTarget.fromAlias(
-        new route53Targets.ApiGatewayDomain(customDomain)
-      ),
-    });
+      new route53.AaaaRecord(this, 'AliasRecordAAAA', {
+        zone: hostedZone,
+        recordName: config.domain,
+        target: route53.RecordTarget.fromAlias(
+          new route53Targets.ApiGatewayDomain(customDomain)
+        ),
+      });
+
+      new cdk.CfnOutput(this, 'CustomDomainUrl', {
+        value: `https://${config.domain}`,
+        description: 'Custom domain URL',
+      });
+    }
 
     // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', {
@@ -117,11 +136,6 @@ export class FilmStruckStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'TableName', {
       value: table.tableName,
       description: 'DynamoDB table name',
-    });
-
-    new cdk.CfnOutput(this, 'CustomDomainUrl', {
-      value: `https://${config.domain}`,
-      description: 'Custom domain URL',
     });
   }
 }
