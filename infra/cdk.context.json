@@ -1,0 +1,9 @@
+{
+  "acknowledged-issue-numbers": [
+    34892
+  ],
+  "hosted-zone:account=956759012768:domainName=filmstruck.net:region=us-east-1": {
+    "Id": "/hostedzone/Z01028973EDUEGEQ9B6AI",
+    "Name": "filmstruck.net."
+  }
+}
