@@ -1,6 +1,7 @@
 # .NET
-bin/
-obj/
+**/bin/
+!infra/bin/
+**/obj/
 *.user
 *.suo
 *.userosscache
@@ -15,6 +16,11 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# CDK
+infra/node_modules/
+infra/dist/
+cdk.out/
 
 # Test site
 test/
