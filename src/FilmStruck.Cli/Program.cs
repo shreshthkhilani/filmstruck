@@ -12,7 +12,7 @@ app.Configure(config =>
         .WithDescription("Initialize a new filmstruck repository");
 
     config.AddCommand<AddCommand>("add")
-        .WithDescription("Add a new film entry with TMDB lookup");
+        .WithDescription("Add a new film entry, with optional TMDB lookup");
 
     config.AddCommand<EnrichCommand>("enrich")
         .WithDescription("Look up TMDB IDs for existing log entries");
