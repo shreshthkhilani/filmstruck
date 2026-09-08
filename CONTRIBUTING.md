@@ -7,7 +7,7 @@ Thank you for your interest in contributing to FilmStruck!
 ### Prerequisites
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- A TMDB API key from [themoviedb.org](https://www.themoviedb.org/settings/api)
+- A TMDB API key from [themoviedb.org](https://www.themoviedb.org/settings/api) for commands that look up film metadata (not required for `filmstruck add --no-tmdb`)
 
 ### Getting Started
 
@@ -17,7 +17,7 @@ Thank you for your interest in contributing to FilmStruck!
    cd filmstruck
    ```
 
-2. Set your TMDB API key:
+2. Set your TMDB API key if you plan to use TMDB-backed commands:
    ```bash
    export TMDB_API_KEY="your-api-key"
    ```
@@ -190,29 +190,32 @@ make test
 
 ### Publishing a Release
 
-1. **Update the version** in `src/FilmStruck.Cli/FilmStruck.Cli.csproj`:
-   ```xml
-   <Version>1.0.1</Version>
-   ```
+Releases are generated automatically when a pull request is merged into `main`.
+Before merging, apply exactly one version label when the change requires a
+non-default bump:
 
-2. **Commit the version bump:**
-   ```bash
-   git add src/FilmStruck.Cli/FilmStruck.Cli.csproj
-   git commit -m "Bump version to 1.0.1"
-   git push
-   ```
+- `major` for breaking changes (for example, `1.4.1` to `2.0.0`)
+- `minor` for backward-compatible features (for example, `1.4.1` to `1.5.0`)
+- `patch` for fixes and documentation (for example, `1.4.1` to `1.4.2`)
 
-3. **Create a GitHub release:**
-   - Go to Releases > "Create a new release"
-   - Tag: `v1.0.1` (must match version with `v` prefix)
-   - Title: `v1.0.1`
-   - Describe the changes
-   - Click "Publish release"
+If none of these labels is present, the workflow defaults to a patch release.
+When multiple version labels are present, `major` takes precedence over `minor`,
+and `minor` takes precedence over `patch`.
 
-4. **Verify:** The `publish.yml` workflow will automatically:
-   - Build the package
-   - Push to NuGet.org
-   - Check the Actions tab for status
+After the merge, `.github/workflows/publish.yml` will:
+
+1. Run the full CI workflow.
+2. Read the version label from the merged pull request.
+3. Calculate the next version from the latest `v*` Git tag.
+4. Pack and publish `FilmStruck.Cli` to NuGet.org.
+5. Create the matching GitHub tag and release.
+
+Do not edit the project version or create a tag manually for the normal release
+flow. Verify that the publish workflow succeeds and that the new package version
+is available on NuGet before updating or redeploying downstream sites.
+
+The workflow can also be started manually from GitHub Actions. Manual runs ask
+for an explicit `patch`, `minor`, or `major` bump.
 
 ### Manual Publishing (Alternative)
 
