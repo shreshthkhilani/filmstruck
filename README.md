@@ -56,7 +56,8 @@ Creates:
 
 ### `filmstruck add`
 
-Add a new film entry with TMDB lookup.
+Add a new film entry, normally with TMDB lookup. Films that are not listed on
+TMDB can be added with a title-card placeholder instead.
 
 ```bash
 filmstruck add
@@ -80,6 +81,7 @@ Interactive prompts guide you through:
 | `--companions` | `-c` | Comma-separated list of companions |
 | `--default-poster` | | Use the default/first poster without prompting |
 | `--tmdb-id` | | TMDB movie ID (skips search and confirmation) |
+| `--no-tmdb` | | Add without TMDB metadata or a poster |
 
 Any flags provided will skip the corresponding interactive prompt. This allows for scripted or partially automated usage:
 
@@ -92,7 +94,14 @@ filmstruck add -t "The Matrix" -d 1/15/2026 -l "AMC Theater" -c ""
 
 # Just use default poster, prompt for everything else
 filmstruck add --default-poster
+
+# Add a film that is not listed on TMDB
+filmstruck add --title "Festival Short" --no-tmdb -d 1/15/2026 -l "Local Cinema" -c "Alice"
 ```
+
+Unlinked films appear on the generated site with a title-card placeholder and
+are included in watch-year, location, and companion statistics. Run
+`filmstruck enrich` later if the film is added to TMDB.
 
 ### `filmstruck enrich`
 

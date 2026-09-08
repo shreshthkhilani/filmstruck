@@ -34,6 +34,10 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
         [Description("TMDB movie ID (skips search and confirmation)")]
         public int? TmdbId { get; set; }
 
+        [CommandOption("--no-tmdb")]
+        [Description("Add the film without TMDB metadata or a poster")]
+        public bool NoTmdb { get; set; }
+
         public override ValidationResult Validate()
         {
             if (!string.IsNullOrEmpty(Date) &&
@@ -48,6 +52,11 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
                 return ValidationResult.Error("TMDB ID must be a positive integer");
             }
 
+            if (NoTmdb && TmdbId.HasValue)
+            {
+                return ValidationResult.Error("--no-tmdb cannot be used with --tmdb-id");
+            }
+
             return ValidationResult.Success();
         }
     }
@@ -55,7 +64,7 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
         var apiKey = Environment.GetEnvironmentVariable("TMDB_API_KEY");
-        if (string.IsNullOrEmpty(apiKey))
+        if (!settings.NoTmdb && string.IsNullOrEmpty(apiKey))
         {
             AnsiConsole.MarkupLine("[red]Error:[/] TMDB_API_KEY environment variable is required");
             AnsiConsole.MarkupLine("Get an API key at [link]https://www.themoviedb.org/settings/api[/]");
@@ -63,7 +72,7 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
         }
 
         var csvService = new CsvService();
-        using var tmdbService = new TmdbService(apiKey);
+        using var tmdbService = settings.NoTmdb ? null : new TmdbService(apiKey!);
         var posterService = new PosterSelectionService();
 
         AnsiConsole.MarkupLine("[bold blue]Add a new film[/]\n");
@@ -76,15 +85,20 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
         // 1. Get title (from flag or prompt)
         var title = settings.Title ?? AnsiConsole.Ask<string>("Film [green]title[/]:");
 
-        // 2. Search TMDB and select (or use --tmdb-id if provided)
+        // 2. Search TMDB and select (or skip TMDB when requested)
         int? tmdbId;
-        if (settings.TmdbId.HasValue)
+        if (settings.NoTmdb)
+        {
+            tmdbId = null;
+            AnsiConsole.MarkupLine("[dim]Adding without TMDB metadata; the site will use a title card.[/]");
+        }
+        else if (settings.TmdbId.HasValue)
         {
             // Validate the TMDB ID exists
             var (validatedFilm, error) = await AnsiConsole.Status()
                 .StartAsync("Validating TMDB ID...", async ctx =>
                 {
-                    return await tmdbService.GetApprovedFilmAsync(settings.TmdbId.Value, title);
+                    return await tmdbService!.GetApprovedFilmAsync(settings.TmdbId.Value, title);
                 });
 
             if (validatedFilm == null)
@@ -98,7 +112,7 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
         }
         else
         {
-            tmdbId = await SearchAndSelectFilmAsync(tmdbService, title);
+            tmdbId = await SearchAndSelectFilmAsync(tmdbService!, title);
             if (tmdbId == null)
             {
                 AnsiConsole.MarkupLine("[yellow]Cancelled.[/]");
@@ -106,48 +120,51 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
             }
         }
 
-        // 3. Get or create approved film entry
-        ApprovedFilm approved;
-        bool isNewFilm = !approvedFilms.ContainsKey(tmdbId.Value);
-
-        if (isNewFilm)
+        if (tmdbId.HasValue)
         {
-            var (fetchedApproved, error) = await tmdbService.GetApprovedFilmAsync(tmdbId.Value, title);
-            if (fetchedApproved == null)
+            // 3. Get or create approved film entry
+            ApprovedFilm approved;
+            bool isNewFilm = !approvedFilms.ContainsKey(tmdbId.Value);
+
+            if (isNewFilm)
             {
-                AnsiConsole.MarkupLine($"[red]Error fetching film details:[/] {Markup.Escape(error ?? "Unknown error")}");
-                return 1;
+                var (fetchedApproved, error) = await tmdbService!.GetApprovedFilmAsync(tmdbId.Value, title);
+                if (fetchedApproved == null)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error fetching film details:[/] {Markup.Escape(error ?? "Unknown error")}");
+                    return 1;
+                }
+                approved = fetchedApproved;
             }
-            approved = fetchedApproved;
-        }
-        else
-        {
-            approved = approvedFilms[tmdbId.Value];
-            AnsiConsole.MarkupLine($"[dim]Film already in films.csv:[/] {Markup.Escape(approved.Title)}");
-        }
-
-        // 4. Poster selection
-        var posters = await AnsiConsole.Status()
-            .StartAsync("Fetching posters...", async ctx =>
+            else
             {
-                return await tmdbService.GetMoviePostersAsync(tmdbId.Value);
-            });
+                approved = approvedFilms[tmdbId.Value];
+                AnsiConsole.MarkupLine($"[dim]Film already in films.csv:[/] {Markup.Escape(approved.Title)}");
+            }
 
-        if (posters.Count > 1 && !settings.DefaultPoster)
-        {
-            var selectedPoster = posterService.SelectPoster(
-                approved.Title,
-                approved.ReleaseYear,
-                tmdbId.Value,
-                posters,
-                approved.PosterPath);
-            approved = approved with { PosterPath = selectedPoster };
-        }
+            // 4. Poster selection
+            var posters = await AnsiConsole.Status()
+                .StartAsync("Fetching posters...", async ctx =>
+                {
+                    return await tmdbService!.GetMoviePostersAsync(tmdbId.Value);
+                });
 
-        approvedFilms[tmdbId.Value] = approved;
-        if (isNewFilm)
-        {
-            AnsiConsole.MarkupLine($"[green]Added to films.csv:[/] {Markup.Escape(approved.Title)} ({approved.ReleaseYear}) - {Markup.Escape(approved.Director ?? "Unknown")}");
+            if (posters.Count > 1 && !settings.DefaultPoster)
+            {
+                var selectedPoster = posterService.SelectPoster(
+                    approved.Title,
+                    approved.ReleaseYear,
+                    tmdbId.Value,
+                    posters,
+                    approved.PosterPath);
+                approved = approved with { PosterPath = selectedPoster };
+            }
+
+            approvedFilms[tmdbId.Value] = approved;
+            if (isNewFilm)
+            {
+                AnsiConsole.MarkupLine($"[green]Added to films.csv:[/] {Markup.Escape(approved.Title)} ({approved.ReleaseYear}) - {Markup.Escape(approved.Director ?? "Unknown")}");
+            }
         }
 
         // 5. Get date (from flag or prompt, default: today)
@@ -209,7 +226,7 @@ public class AddCommand : AsyncCommand<AddCommand.Settings>
         }
 
         // 8. Append to log.csv
-        var newFilm = new Film(date, title, location, companions, tmdbId.Value);
+        var newFilm = new Film(date, title, location, companions, tmdbId);
         films.Add(newFilm);
         await csvService.WriteLogAsync(films);
         await csvService.WriteApprovedFilmsAsync(approvedFilms);

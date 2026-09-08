@@ -134,7 +134,18 @@ else
     fail "calculate: stats.csv not created or empty"
 fi
 
-# Test 3: add command (requires TMDB_API_KEY)
+# Test 3: add an unlinked film (does not require TMDB_API_KEY)
+LOG_LINES_BEFORE=$(wc -l < data/log.csv)
+OUTPUT=$(TMDB_API_KEY= run_command add --title "Unlisted Short" --no-tmdb --date "3/1/2024" --location "Home" --companions "Alice" 2>&1) || true
+LOG_LINES_AFTER=$(wc -l < data/log.csv)
+
+if [ "$LOG_LINES_AFTER" -gt "$LOG_LINES_BEFORE" ] && grep -q '^3/1/2024,Unlisted Short,Home,Alice,$' data/log.csv; then
+    pass "add --no-tmdb: log.csv updated with blank ID"
+else
+    fail "add --no-tmdb: unlinked log row not written"
+fi
+
+# Test 4: add command (requires TMDB_API_KEY)
 if [ -n "$TMDB_API_KEY" ]; then
     LOG_LINES_BEFORE=$(wc -l < data/log.csv)
     OUTPUT=$(run_command add --title "The Matrix" --tmdb-id 603 --date "3/1/2024" --location "Home" --companions "" --default-poster 2>&1) || true
@@ -156,16 +167,16 @@ else
     skip "add"
 fi
 
-# Test 4: build command (creates index.html)
+# Test 5: build command (creates index.html and includes unlinked films)
 rm -f index.html
 OUTPUT=$(run_command build 2>&1) || true
-if [ -f "index.html" ]; then
+if [ -f "index.html" ] && grep -q 'Unlisted Short' index.html; then
     pass "build"
 else
-    fail "build: index.html not generated"
+    fail "build: index.html not generated with unlinked film"
 fi
 
-# Test 5: hearts commands (add and remove favorites)
+# Test 6: hearts commands (add and remove favorites)
 rm -f data/hearts.csv
 run_command hearts add --tmdb-id 238 >/dev/null 2>&1 || true
 run_command hearts add --tmdb-id 680 >/dev/null 2>&1 || true

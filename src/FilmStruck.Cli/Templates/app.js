@@ -137,12 +137,34 @@ function escapeHtml(text) {
 
 // Generate placeholder SVG for films without posters
 function generatePlaceholder(title) {
-  // Truncate long titles and escape for SVG/XML
-  const displayTitle = title.length > 50 ? title.substring(0, 47) + '...' : title;
-  const escaped = displayTitle.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  const lines = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const candidate = currentLine ? currentLine + ' ' + word : word;
+    if (candidate.length <= 18 || !currentLine) {
+      currentLine = candidate;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+
+  const visibleLines = lines.slice(0, 5);
+  if (lines.length > visibleLines.length) {
+    visibleLines[visibleLines.length - 1] = visibleLines[visibleLines.length - 1].substring(0, 15).trimEnd() + '...';
+  }
+
+  const escapeXml = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const startY = 115 - ((visibleLines.length - 1) * 8);
+  const titleLines = visibleLines
+    .map((line, index) => '<tspan x="77" y="' + (startY + index * 16) + '">' + escapeXml(line) + '</tspan>')
+    .join('');
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="154" height="231" viewBox="0 0 154 231">' +
     '<rect fill="#2a2a2a" width="154" height="231"/>' +
-    '<text x="77" y="115" text-anchor="middle" fill="#888" font-family="system-ui,sans-serif" font-size="12">' + escaped + '</text>' +
+    '<text text-anchor="middle" fill="#888" font-family="system-ui,sans-serif" font-size="12">' + titleLines + '</text>' +
     '</svg>';
   return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
@@ -158,12 +180,9 @@ function renderPosters(films) {
   }
 
   grid.innerHTML = sorted.map(f => {
-    const lines = [
-      f.title + ' (' + f.releaseYear + ')',
-      'dir. ' + (f.director || '').replace(/,/g, ', '),
-      '',
-      'Watched ' + f.date + ' · ' + f.location + (f.companions ? ' · ' + f.companions.replace(/,/g, ', ') : '')
-    ];
+    const lines = [f.title + (f.releaseYear ? ' (' + f.releaseYear + ')' : '')];
+    if (f.director) lines.push('dir. ' + f.director.replace(/,/g, ', '));
+    lines.push('', 'Watched ' + f.date + ' · ' + f.location + (f.companions ? ' · ' + f.companions.replace(/,/g, ', ') : ''));
     const tooltip = lines.join('\n');
     const posterUrl = f.posterPath ? 'https://image.tmdb.org/t/p/w154' + f.posterPath : generatePlaceholder(f.title);
     return '<img src="' + posterUrl + '" alt="' + escapeHtml(f.title) + '" title="' + escapeHtml(tooltip) + '">';

@@ -31,7 +31,7 @@ public class BuildCommand : AsyncCommand<BuildCommand.Settings>
         var watchedFilms = JoinLogWithFilms(log, films);
         var companions = ExtractCompanions(log);
 
-        AnsiConsole.MarkupLine($"[dim]Found {watchedFilms.Count} films with metadata[/]");
+        AnsiConsole.MarkupLine($"[dim]Found {watchedFilms.Count} films[/]");
         AnsiConsole.MarkupLine($"[dim]Found {companions.Count} unique companions[/]");
         if (hearts.Count > 0)
         {
@@ -70,14 +70,31 @@ public class BuildCommand : AsyncCommand<BuildCommand.Settings>
         return ms.ToArray();
     }
 
-    private static List<WatchedFilm> JoinLogWithFilms(List<Film> log, Dictionary<int, ApprovedFilm> films)
+    internal static List<WatchedFilm> JoinLogWithFilms(List<Film> log, Dictionary<int, ApprovedFilm> films)
     {
-        return log
-            .Where(entry => entry.TmdbId.HasValue && films.ContainsKey(entry.TmdbId.Value))
-            .Select(entry =>
+        var watchedFilms = new List<WatchedFilm>();
+
+        foreach (var entry in log)
+        {
+            if (!entry.TmdbId.HasValue)
             {
-                var film = films[entry.TmdbId!.Value];
-                return new WatchedFilm(
+                watchedFilms.Add(new WatchedFilm(
+                    Date: entry.Date,
+                    Location: entry.Location,
+                    Companions: entry.Companions,
+                    TmdbId: "",
+                    Title: entry.Title,
+                    ReleaseYear: "",
+                    Director: "",
+                    Language: "",
+                    PosterPath: ""
+                ));
+                continue;
+            }
+
+            if (films.TryGetValue(entry.TmdbId.Value, out var film))
+            {
+                watchedFilms.Add(new WatchedFilm(
                     Date: entry.Date,
                     Location: entry.Location,
                     Companions: entry.Companions,
@@ -87,9 +104,11 @@ public class BuildCommand : AsyncCommand<BuildCommand.Settings>
                     Director: film.Director ?? "",
                     Language: film.Language ?? "",
                     PosterPath: film.PosterPath ?? ""
-                );
-            })
-            .ToList();
+                ));
+            }
+        }
+
+        return watchedFilms;
     }
 
     private static List<CompanionCount> ExtractCompanions(List<Film> log)

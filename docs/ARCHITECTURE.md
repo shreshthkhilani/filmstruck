@@ -88,7 +88,8 @@ Creates: `filmstruck.json`, `data/log.csv`, `data/films.csv`, `.github/workflows
 
 #### `filmstruck add`
 
-Adds a new film entry with full TMDB lookup.
+Adds a new film entry with full TMDB lookup, or an unlinked entry when
+`--no-tmdb` is supplied.
 
 Flow:
 1. Prompt for title
@@ -100,6 +101,10 @@ Flow:
 7. Prompt for location (recent locations as suggestions)
 8. Prompt for companions
 9. Append to log.csv, update films.csv
+
+For `--no-tmdb` entries, the command skips steps 2–5 and writes a blank
+`tmdbId`. The site renders these entries with a generated title card. They can
+be linked later with `filmstruck enrich`.
 
 #### `filmstruck enrich`
 

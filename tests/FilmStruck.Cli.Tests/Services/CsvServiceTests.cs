@@ -91,6 +91,21 @@ public class CsvServiceTests
     }
 
     [Test]
+    public async Task LoadLogAsync_ParsesBlankTmdbId()
+    {
+        var logPath = Path.Combine(_tempDir, "data", "log.csv");
+        await File.WriteAllTextAsync(logPath, @"date,title,location,companions,tmdbId
+9/6/2026,Festival Short,Arverne Cinema,""Jack,Eli"",");
+
+        var service = CreateService();
+        var films = await service.LoadLogAsync();
+
+        Assert.That(films, Has.Count.EqualTo(1));
+        Assert.That(films[0].TmdbId, Is.Null);
+        Assert.That(films[0].Title, Is.EqualTo("Festival Short"));
+    }
+
+    [Test]
     public async Task LoadApprovedFilmsAsync_ParsesAllFields()
     {
         var filmsPath = Path.Combine(_tempDir, "data", "films.csv");
