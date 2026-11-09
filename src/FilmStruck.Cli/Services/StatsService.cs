@@ -5,13 +5,18 @@ namespace FilmStruck.Cli.Services;
 
 public class StatsService
 {
-    public Dictionary<string, Dictionary<string, int>> CalculateStats(
+    public const string RuntimeStat = "runtime";
+    public const string TotalMinutesKey = "total_minutes";
+    public const string KnownWatchesKey = "known_watches";
+
+    public Dictionary<string, Dictionary<string, long>> CalculateStats(
         List<Film> log,
         Dictionary<int, ApprovedFilm> films)
     {
-        var stats = new Dictionary<string, Dictionary<string, int>>
+        var stats = new Dictionary<string, Dictionary<string, long>>
         {
             ["watch_year"] = new(),
+            [RuntimeStat] = new() { [TotalMinutesKey] = 0, [KnownWatchesKey] = 0 },
             ["director"] = new(),
             ["language"] = new(),
             ["companion"] = new(),
@@ -49,6 +54,12 @@ public class StatsService
             // Join with films for director, language, release_decade
             if (entry.TmdbId.HasValue && films.TryGetValue(entry.TmdbId.Value, out var film))
             {
+                if (film.RuntimeMinutes is > 0)
+                {
+                    stats[RuntimeStat][TotalMinutesKey] += film.RuntimeMinutes.Value;
+                    stats[RuntimeStat][KnownWatchesKey]++;
+                }
+
                 // director: Split by comma and count each
                 if (!string.IsNullOrWhiteSpace(film.Director))
                 {
@@ -78,13 +89,13 @@ public class StatsService
         return stats;
     }
 
-    public async Task WriteStatsAsync(string path, Dictionary<string, Dictionary<string, int>> stats)
+    public async Task WriteStatsAsync(string path, Dictionary<string, Dictionary<string, long>> stats)
     {
         var sb = new StringBuilder();
         sb.AppendLine("stat,key,value");
 
         // Write stats in a consistent order
-        var statOrder = new[] { "watch_year", "director", "language", "companion", "location", "release_decade" };
+        var statOrder = new[] { "watch_year", RuntimeStat, "director", "language", "companion", "location", "release_decade" };
 
         foreach (var statType in statOrder)
         {
@@ -93,10 +104,14 @@ public class StatsService
 
             // Sort: for watch_year, put ALL_TIME first then years descending
             // For others, sort by count descending
-            IEnumerable<KeyValuePair<string, int>> sorted;
+            IEnumerable<KeyValuePair<string, long>> sorted;
             if (statType == "watch_year")
             {
                 sorted = values.OrderByDescending(kv => kv.Key == "ALL_TIME" ? int.MaxValue : int.Parse(kv.Key));
+            }
+            else if (statType == RuntimeStat)
+            {
+                sorted = values.OrderBy(kv => kv.Key, StringComparer.Ordinal);
             }
             else
             {

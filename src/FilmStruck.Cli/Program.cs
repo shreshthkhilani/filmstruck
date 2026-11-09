@@ -17,6 +17,9 @@ app.Configure(config =>
     config.AddCommand<EnrichCommand>("enrich")
         .WithDescription("Look up TMDB IDs for existing log entries");
 
+    config.AddCommand<BackfillRuntimesCommand>("backfill-runtimes")
+        .WithDescription("Fill missing runtimes in films.csv using existing TMDB IDs");
+
     config.AddCommand<CalculateCommand>("calculate")
         .WithDescription("Calculate and write statistics to stats.csv");
 

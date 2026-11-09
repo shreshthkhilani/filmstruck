@@ -119,6 +119,13 @@ Flow:
    - User selects poster
    - Save immediately (allows resuming)
 
+#### `filmstruck backfill-runtimes`
+
+Look up Movie Details for existing positive TMDB IDs in `films.csv` that lack a usable
+runtime. The command writes only the optional runtime column and replaces the file
+after all lookups finish. Unknown runtimes and HTTP 404 responses can be retried on
+later runs. Other lookup errors stop the command before it writes.
+
 #### `filmstruck build`
 
 Generates the static site from CSV data.
@@ -224,6 +231,10 @@ Cached metadata from TMDB, keyed by tmdbId.
 | releaseYear | string | 4-digit year |
 | language | string | ISO 639-1 language code |
 | posterPath | string | TMDB poster path (e.g., /abc123.jpg) |
+| runtimeMinutes | int? | Positive duration in minutes from Movie Details, optional in legacy files |
+
+`stats.csv` records all-time `runtime,total_minutes` and `runtime,known_watches`
+as integers. The total sums known durations across individual watches.
 
 ### filmstruck.json (Configuration)
 
@@ -266,6 +277,7 @@ Features:
 
 Displays:
 - Total films count
+- Hours watched and runtime coverage for the watches in the current view
 - Films watched this year
 - Last watched date
 - Up to five directors, languages, release decades, locations, and companions, ranked by watch count

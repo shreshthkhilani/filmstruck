@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using FilmStruck.Cli.Services;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -113,7 +114,19 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
                 var selectedIndex = choices.IndexOf(selected);
                 var selectedOption = options[selectedIndex];
 
-                film.TmdbId = selectedOption.Movie.Id;
+                int? runtimeMinutes = approvedFilms.GetValueOrDefault(selectedOption.Movie.Id)?.RuntimeMinutes;
+                if (runtimeMinutes is null)
+                {
+                    try
+                    {
+                        var details = await tmdbService.GetMovieDetailsAsync(selectedOption.Movie.Id);
+                        runtimeMinutes = details?.RuntimeMinutes is > 0 ? details.RuntimeMinutes : null;
+                    }
+                    catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+                    {
+                        AnsiConsole.MarkupLine("  [yellow]Runtime lookup failed. Use backfill-runtimes to retry.[/]");
+                    }
+                }
 
                 var approved = new ApprovedFilm(
                     selectedOption.Movie.Id,
@@ -122,7 +135,10 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
                     selectedOption.Year,
                     selectedOption.Movie.OriginalLanguage,
                     selectedOption.Movie.PosterPath
-                );
+                )
+                {
+                    RuntimeMinutes = runtimeMinutes
+                };
 
                 // Poster selection
                 if (!settings.DefaultPoster)
@@ -140,6 +156,7 @@ public class EnrichCommand : AsyncCommand<EnrichCommand.Settings>
                     }
                 }
 
+                film.TmdbId = selectedOption.Movie.Id;
                 approvedFilms[selectedOption.Movie.Id] = approved;
 
                 await SaveAsync(films, approvedFilms, csvService);

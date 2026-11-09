@@ -198,4 +198,33 @@ else
     fail "hearts: expected 680 in hearts.csv and 238 removed"
 fi
 
+# Test 7: runtime backfill updates only films.csv and is safe to rerun.
+if [ -n "$TMDB_API_KEY" ]; then
+    cp data/log.csv log.before
+    cat > data/films.csv << 'EOF'
+tmdbId,title,director,releaseYear,language,posterPath,runtimeMinutes
+238,"Custom, Godfather",Custom Director,1972,en,/custom.jpg,
+680,Pulp Fiction,Quentin Tarantino,1994,en,/custom-pulp.jpg,91
+2147483647,Unavailable,,,,,
+EOF
+    if run_command backfill-runtimes >/dev/null &&
+        grep -Eq '^238,"Custom, Godfather",Custom Director,1972,en,/custom.jpg,[1-9][0-9]*$' data/films.csv &&
+        grep -qx '680,Pulp Fiction,Quentin Tarantino,1994,en,/custom-pulp.jpg,91' data/films.csv &&
+        grep -qx '2147483647,Unavailable,,,,,' data/films.csv &&
+        cmp -s data/log.csv log.before; then
+        pass "backfill-runtimes: fills missing runtimes only"
+    else
+        fail "backfill-runtimes: expected a runtime and preserved metadata"
+    fi
+
+    cp data/films.csv films.before
+    if run_command backfill-runtimes >/dev/null && cmp -s data/films.csv films.before; then
+        pass "backfill-runtimes: idempotent"
+    else
+        fail "backfill-runtimes: rerun changed films.csv"
+    fi
+else
+    skip "backfill-runtimes (requires TMDB_API_KEY)"
+fi
+
 print_summary

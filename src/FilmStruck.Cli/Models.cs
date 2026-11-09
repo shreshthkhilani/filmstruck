@@ -27,7 +27,10 @@ public record ApprovedFilm(
     string? ReleaseYear,
     string? Language,
     string? PosterPath
-);
+)
+{
+    public int? RuntimeMinutes { get; init; }
+}
 
 public record MovieOption(TmdbMovie Movie, string? Director, string Year);
 
@@ -41,7 +44,11 @@ public record TmdbMovie(
     [property: JsonPropertyName("release_date")] string? ReleaseDate,
     [property: JsonPropertyName("original_language")] string? OriginalLanguage,
     [property: JsonPropertyName("poster_path")] string? PosterPath
-);
+)
+{
+    [JsonPropertyName("runtime")]
+    public int? RuntimeMinutes { get; init; }
+}
 
 public record TmdbCreditsResponse(
     [property: JsonPropertyName("crew")] List<TmdbCrewMember>? Crew
@@ -77,7 +84,11 @@ public record WatchedFilm(
     [property: JsonPropertyName("director")] string Director,
     [property: JsonPropertyName("language")] string Language,
     [property: JsonPropertyName("posterPath")] string PosterPath
-);
+)
+{
+    [JsonPropertyName("runtimeMinutes")]
+    public int? RuntimeMinutes { get; init; }
+}
 
 public record CompanionCount(
     [property: JsonPropertyName("name")] string Name,

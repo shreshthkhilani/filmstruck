@@ -91,7 +91,10 @@ public class TmdbService : IDisposable
                 year,
                 movie.OriginalLanguage,
                 movie.PosterPath
-            );
+            )
+            {
+                RuntimeMinutes = movie.RuntimeMinutes is > 0 ? movie.RuntimeMinutes : null
+            };
             return (approved, null);
         }
         catch (Exception ex)

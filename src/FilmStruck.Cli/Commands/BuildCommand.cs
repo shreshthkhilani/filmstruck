@@ -104,7 +104,10 @@ public class BuildCommand : AsyncCommand<BuildCommand.Settings>
                     Director: film.Director ?? "",
                     Language: film.Language ?? "",
                     PosterPath: film.PosterPath ?? ""
-                ));
+                )
+                {
+                    RuntimeMinutes = film.RuntimeMinutes
+                });
             }
         }
 

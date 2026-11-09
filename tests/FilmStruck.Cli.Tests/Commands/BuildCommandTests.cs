@@ -25,6 +25,7 @@ public class BuildCommandTests
             Assert.That(watchedFilms[0].PosterPath, Is.Empty);
             Assert.That(watchedFilms[0].ReleaseYear, Is.Empty);
             Assert.That(watchedFilms[0].Director, Is.Empty);
+            Assert.That(watchedFilms[0].RuntimeMinutes, Is.Null);
         });
     }
 
@@ -38,6 +39,9 @@ public class BuildCommandTests
         var films = new Dictionary<int, ApprovedFilm>
         {
             [123] = new ApprovedFilm(123, "Canonical Title", "Director", "2026", "en", "/poster.jpg")
+            {
+                RuntimeMinutes = 95
+            }
         };
 
         var watchedFilms = BuildCommand.JoinLogWithFilms(log, films);
@@ -48,6 +52,7 @@ public class BuildCommandTests
             Assert.That(watchedFilms[0].Title, Is.EqualTo("Canonical Title"));
             Assert.That(watchedFilms[0].TmdbId, Is.EqualTo("123"));
             Assert.That(watchedFilms[0].PosterPath, Is.EqualTo("/poster.jpg"));
+            Assert.That(watchedFilms[0].RuntimeMinutes, Is.EqualTo(95));
         });
     }
 }

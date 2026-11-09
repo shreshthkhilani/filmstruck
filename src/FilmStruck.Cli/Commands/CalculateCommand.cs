@@ -28,7 +28,17 @@ public class CalculateCommand : AsyncCommand<CalculateCommand.Settings>
         await statsService.WriteStatsAsync(csvService.StatsPath, stats);
 
         // Print summary
-        AnsiConsole.MarkupLine($"[green]Total films watched:[/] {stats["watch_year"].GetValueOrDefault("ALL_TIME")}");
+        var totalWatches = stats["watch_year"].GetValueOrDefault("ALL_TIME");
+        var knownWatches = stats[StatsService.RuntimeStat][StatsService.KnownWatchesKey];
+        var totalMinutes = stats[StatsService.RuntimeStat][StatsService.TotalMinutesKey];
+        AnsiConsole.MarkupLine($"[green]Total films watched:[/] {totalWatches}");
+        AnsiConsole.MarkupLine(knownWatches == 0
+            ? "[green]Total hours watched:[/] unavailable"
+            : $"[green]Total hours watched:[/] {totalMinutes / 60m:0.##}");
+        if (knownWatches < totalWatches)
+        {
+            AnsiConsole.MarkupLine($"[dim]Runtime known for {knownWatches} of {totalWatches} watches[/]");
+        }
 
         if (stats["watch_year"].Count > 1)
         {

@@ -122,6 +122,131 @@ public class CsvServiceTests
         Assert.That(films[27205].ReleaseYear, Is.EqualTo("2010"));
         Assert.That(films[27205].Language, Is.EqualTo("en"));
         Assert.That(films[27205].PosterPath, Is.EqualTo("/poster1.jpg"));
+        Assert.That(films[27205].RuntimeMinutes, Is.Null);
+    }
+
+    [TestCase("120", 120)]
+    [TestCase("", null)]
+    [TestCase("0", null)]
+    [TestCase("-20", null)]
+    [TestCase("unknown", null)]
+    public async Task LoadApprovedFilmsAsync_ReadsOptionalPositiveRuntime(string value, int? expected)
+    {
+        var service = CreateService();
+        await File.WriteAllTextAsync(service.FilmsPath,
+            $"tmdbId,title,director,releaseYear,language,posterPath,notes,runtimeMinutes\n603,Matrix,,1999,en,,note,{value}");
+
+        var films = await service.LoadApprovedFilmsAsync();
+
+        Assert.That(films[603].RuntimeMinutes, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public async Task WriteApprovedFilmsAsync_RoundTripsRuntimeAndUnknown()
+    {
+        var service = CreateService();
+        var films = new Dictionary<int, ApprovedFilm>
+        {
+            [603] = new(603, "The Matrix", null, "1999", "en", null) { RuntimeMinutes = 136 },
+            [238] = new(238, "The Godfather", null, "1972", "en", null)
+        };
+
+        await service.WriteApprovedFilmsAsync(films);
+
+        var reloaded = await service.LoadApprovedFilmsAsync();
+        Assert.That(reloaded[603].RuntimeMinutes, Is.EqualTo(136));
+        Assert.That(reloaded[238].RuntimeMinutes, Is.Null);
+    }
+
+    [Test]
+    public async Task BackfillRuntimesAsync_AppendsColumnWithoutChangingOtherFields()
+    {
+        var service = CreateService();
+        const string header = "tmdbId,title,director,releaseYear,language,posterPath,notes";
+        const string customRow = "603,\"Custom, \"\"title\"\"\",Director,1999,en,/custom.jpg, keep spaces ";
+        const string missingId = ",Unlinked,,,,,keep";
+        const string unknown = "238,The Godfather,,1972,en,,keep";
+        await File.WriteAllTextAsync(service.FilmsPath, $"\uFEFF{header}\r\n{customRow}\r\n{missingId}\r\n{unknown}");
+
+        var requests = new List<int>();
+        Task<int?> Lookup(int id)
+        {
+            requests.Add(id);
+            return Task.FromResult<int?>(id == 603 ? 136 : null);
+        }
+
+        Assert.That(await service.BackfillRuntimesAsync(Lookup), Is.EqualTo(1));
+        var expected = $"\uFEFF{header},runtimeMinutes\r\n{customRow},136\r\n{missingId},\r\n{unknown},";
+        var actual = System.Text.Encoding.UTF8.GetString(await File.ReadAllBytesAsync(service.FilmsPath));
+        Assert.That(actual, Is.EqualTo(expected));
+        Assert.That(requests, Is.EqualTo(new[] { 603, 238 }));
+
+        requests.Clear();
+        Assert.That(await service.BackfillRuntimesAsync(Lookup), Is.Zero);
+        Assert.That(requests, Is.EqualTo(new[] { 238 }));
+        Assert.That(System.Text.Encoding.UTF8.GetString(await File.ReadAllBytesAsync(service.FilmsPath)),
+            Is.EqualTo(expected));
+    }
+
+    [Test]
+    public async Task BackfillRuntimesAsync_UpdatesOnlyRuntimeColumn()
+    {
+        var service = CreateService();
+        const string header = "tmdbId,title,director,releaseYear,language,posterPath,runtimeMinutes,notes";
+        await File.WriteAllTextAsync(service.FilmsPath,
+            header + "\n603,The Matrix,,1999,en,,0,keep\n238,The Godfather,,1972,en,,175,keep\n");
+
+        var updated = await service.BackfillRuntimesAsync(id =>
+        {
+            Assert.That(id, Is.EqualTo(603));
+            return Task.FromResult<int?>(136);
+        });
+
+        Assert.That(updated, Is.EqualTo(1));
+        Assert.That(await File.ReadAllTextAsync(service.FilmsPath),
+            Is.EqualTo(header + "\n603,The Matrix,,1999,en,,136,keep\n238,The Godfather,,1972,en,,175,keep\n"));
+    }
+
+    [Test]
+    public async Task BackfillRuntimesAsync_LeavesOriginalWhenLookupFails()
+    {
+        var service = CreateService();
+        const string original = "tmdbId,title,director,releaseYear,language,posterPath\n" +
+            "603,The Matrix,,1999,en,\n238,The Godfather,,1972,en,\n";
+        await File.WriteAllTextAsync(service.FilmsPath, original);
+
+        Assert.ThrowsAsync<HttpRequestException>(async () => await service.BackfillRuntimesAsync(
+            id => id == 603 ? Task.FromResult<int?>(136) : throw new HttpRequestException("Unavailable")));
+        Assert.That(await File.ReadAllTextAsync(service.FilmsPath), Is.EqualTo(original));
+    }
+
+    [Test]
+    public async Task BackfillRuntimesAsync_RefusesToAppendInsideAnUnclosedField()
+    {
+        var service = CreateService();
+        const string original = "tmdbId,title,director,releaseYear,language,posterPath\n" +
+            "603,The Matrix,,1999,en,\n238,The Godfather,,1972,en,\"/custom.jpg\n";
+        await File.WriteAllTextAsync(service.FilmsPath, original);
+
+        Assert.ThrowsAsync<InvalidDataException>(async () =>
+            await service.BackfillRuntimesAsync(_ => Task.FromResult<int?>(136)));
+        Assert.That(await File.ReadAllTextAsync(service.FilmsPath), Is.EqualTo(original));
+    }
+
+    [Test]
+    public async Task BackfillRuntimesAsync_RefusesToOverwriteConcurrentChanges()
+    {
+        var service = CreateService();
+        const string original = "tmdbId,title,director,releaseYear,language,posterPath\n603,The Matrix,,1999,en,\n";
+        var edited = original.Replace("The Matrix", "Edited title");
+        await File.WriteAllTextAsync(service.FilmsPath, original);
+
+        Assert.ThrowsAsync<IOException>(async () => await service.BackfillRuntimesAsync(async _ =>
+        {
+            await File.WriteAllTextAsync(service.FilmsPath, edited);
+            return 136;
+        }));
+        Assert.That(await File.ReadAllTextAsync(service.FilmsPath), Is.EqualTo(edited));
     }
 
     [Test]

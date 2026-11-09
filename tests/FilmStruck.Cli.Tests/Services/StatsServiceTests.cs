@@ -137,4 +137,42 @@ public class StatsServiceTests
         Assert.That(stats["watch_year"]["2024"], Is.EqualTo(2));
         Assert.That(stats["watch_year"]["2023"], Is.EqualTo(1));
     }
+
+    [Test]
+    public async Task CalculateStats_SumsKnownRuntimePerWatch()
+    {
+        var log = new List<Film>
+        {
+            new("1/1/2024", "First watch", "Home", "", 1),
+            new("1/2/2024", "Rewatch", "Home", "", 1),
+            new("1/3/2024", "Unknown runtime", "Home", "", 2),
+            new("1/4/2024", "Unlinked", "Home", "", null),
+            new("1/5/2024", "Uncached", "Home", "", 3)
+        };
+        var films = new Dictionary<int, ApprovedFilm>
+        {
+            [1] = new(1, "First film", null, null, null, null) { RuntimeMinutes = 95 },
+            [2] = new(2, "Second film", null, null, null, null)
+        };
+
+        var service = new StatsService();
+        var stats = service.CalculateStats(log, films);
+
+        Assert.That(stats["runtime"]["total_minutes"], Is.EqualTo(190));
+        Assert.That(stats["runtime"]["known_watches"], Is.EqualTo(2));
+        Assert.That(stats["watch_year"]["ALL_TIME"], Is.EqualTo(5));
+
+        var path = Path.GetTempFileName();
+        try
+        {
+            await service.WriteStatsAsync(path, stats);
+            var rows = await File.ReadAllLinesAsync(path);
+            Assert.That(rows, Does.Contain("runtime,total_minutes,190"));
+            Assert.That(rows, Does.Contain("runtime,known_watches,2"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }
