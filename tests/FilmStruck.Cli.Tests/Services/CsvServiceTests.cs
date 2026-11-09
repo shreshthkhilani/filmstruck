@@ -221,6 +221,19 @@ public class CsvServiceTests
     }
 
     [Test]
+    public async Task BackfillRuntimesAsync_RefusesToAppendInsideAnUnclosedField()
+    {
+        var service = CreateService();
+        const string original = "tmdbId,title,director,releaseYear,language,posterPath\n" +
+            "603,The Matrix,,1999,en,\n238,The Godfather,,1972,en,\"/custom.jpg\n";
+        await File.WriteAllTextAsync(service.FilmsPath, original);
+
+        Assert.ThrowsAsync<InvalidDataException>(async () =>
+            await service.BackfillRuntimesAsync(_ => Task.FromResult<int?>(136)));
+        Assert.That(await File.ReadAllTextAsync(service.FilmsPath), Is.EqualTo(original));
+    }
+
+    [Test]
     public async Task BackfillRuntimesAsync_RefusesToOverwriteConcurrentChanges()
     {
         var service = CreateService();

@@ -154,9 +154,10 @@ public class CsvService
         if (string.IsNullOrWhiteSpace(original)) return 0;
 
         var lines = Regex.Split(original, "(\r\n|\r|\n)");
-        var header = ParseCsvLine(lines[0].TrimStart('\uFEFF'));
+        var header = SplitCsvLine(lines[0].TrimStart('\uFEFF'), out var headerHasOpenQuote)
+            .Select(Unquote).ToList();
         var legacyColumns = LegacyFilmsHeader.Split(',');
-        if (!header.Take(legacyColumns.Length).SequenceEqual(legacyColumns) ||
+        if (headerHasOpenQuote || !header.Take(legacyColumns.Length).SequenceEqual(legacyColumns) ||
             header.Count(column => column == RuntimeColumn) > 1)
         {
             throw new InvalidDataException("Unexpected films.csv header. Check the column names before backfilling.");
@@ -173,7 +174,9 @@ public class CsvService
         {
             if (string.IsNullOrWhiteSpace(lines[i])) continue;
 
-            var fields = SplitCsvLine(lines[i]);
+            var fields = SplitCsvLine(lines[i], out var rowHasOpenQuote);
+            if (rowHasOpenQuote)
+                throw new InvalidDataException($"Unmatched quote on films.csv line {i / 2 + 1}.");
             if (fields.Count > header.Count || fields.Count < legacyColumns.Length)
             {
                 throw new InvalidDataException($"Unexpected number of columns on films.csv line {i / 2 + 1}.");
@@ -279,15 +282,15 @@ public class CsvService
     }
 
     private static List<string> ParseCsvLine(string line) =>
-        SplitCsvLine(line).Select(Unquote).ToList();
+        SplitCsvLine(line, out _).Select(Unquote).ToList();
 
     private static string Unquote(string field) => field.Replace("\"", "").Trim();
 
-    private static List<string> SplitCsvLine(string line)
+    private static List<string> SplitCsvLine(string line, out bool inQuotes)
     {
         var result = new List<string>();
         var fieldStart = 0;
-        var inQuotes = false;
+        inQuotes = false;
 
         for (var i = 0; i < line.Length; i++)
         {
