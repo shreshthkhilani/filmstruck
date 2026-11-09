@@ -277,9 +277,9 @@ Features:
 
 Displays:
 - Total films count
-- Hours watched and runtime coverage for the watches in the current view
 - Films watched this year
 - Last watched date
+- Hours watched for the watches in the current view
 - Up to five directors, languages, release decades, locations, and companions, ranked by watch count
 - Up to five other companions under "also with" when filtering, after excluding the selected names
 
