@@ -111,6 +111,31 @@ Look up TMDB IDs for existing log entries that don't have one.
 filmstruck enrich
 ```
 
+### `filmstruck backfill-runtimes`
+
+Fill missing runtimes in `data/films.csv` using existing TMDB IDs. For an existing log,
+run the following from the log repository with `TMDB_API_KEY` set:
+
+```bash
+dotnet tool update --global FilmStruck.Cli
+filmstruck backfill-runtimes
+filmstruck calculate
+filmstruck build
+git diff -- data/films.csv data/stats.csv
+```
+
+Backfill adds the optional `runtimeMinutes` column when it finds a runtime to save. It
+keeps existing positive runtimes, titles, poster choices, and other metadata. Missing
+or nonpositive TMDB runtimes and IDs TMDB no longer recognizes remain unknown.
+Entries without a TMDB ID need no migration and count toward runtime coverage.
+If a request fails for another reason, backfill stops before writing. Rerun the command
+when access is restored. Avoid concurrent CSV edits while it runs.
+
+Review and commit the updated CSVs for a GitHub Pages deployment. If you host the
+generated HTML directly, publish the rebuilt `index.html`. Legacy six-column files
+build as-is. Update the CLI wherever metadata is written because older versions omit
+the new column when saving `films.csv`.
+
 ### `filmstruck build`
 
 Generate the static site from your CSV data.
@@ -123,7 +148,10 @@ Outputs `index.html` in the repository root.
 
 ### `filmstruck calculate`
 
-Calculate statistics and write to `data/stats.csv`.
+Calculate statistics and write to `data/stats.csv`. The hours-watched summary adds
+each watch with a known runtime, including rewatches. The site applies the same
+calculation to the current companion filter. Both show coverage when runtimes
+are missing and mark the total unavailable when no runtime is known.
 
 ```bash
 filmstruck calculate
@@ -252,7 +280,9 @@ my-films/
 
 ### films.csv
 
-Cached TMDB metadata, automatically populated when adding films.
+Cached TMDB metadata, automatically populated when adding films. The optional
+`runtimeMinutes` column holds the positive whole-minute runtime from TMDB or is
+blank when unavailable. You can supply a known runtime for a linked film in this column.
 
 ## Sample Site
 

@@ -58,6 +58,8 @@ function calculateStats(films) {
   const stats = {
     total: films.length,
     thisYear: 0,
+    totalMinutes: 0,
+    watchesWithRuntime: 0,
     lastWatched: films.length > 0 ? sortFilms(films)[0].date : '',
     directors: {},
     languages: {},
@@ -72,6 +74,11 @@ function calculateStats(films) {
     // Watch year
     const watchYear = parseDate(f.date).getFullYear().toString();
     if (watchYear === currentYear) stats.thisYear++;
+
+    if (Number.isInteger(f.runtimeMinutes) && f.runtimeMinutes > 0) {
+      stats.totalMinutes += f.runtimeMinutes;
+      stats.watchesWithRuntime++;
+    }
 
     // Directors
     if (f.director) {
@@ -271,6 +278,15 @@ function renderStats(stats, filter) {
   // Total films
   html += '<div class="stat-col">';
   html += '<div class="stat-header total-stat-header">' + stats.total + ' films</div>';
+  if (stats.watchesWithRuntime > 0) {
+    const hours = (stats.totalMinutes / 60).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    html += '<div>' + hours + ' hours watched</div>';
+  } else {
+    html += '<div>hours watched unavailable</div>';
+  }
+  if (stats.watchesWithRuntime < stats.total) {
+    html += '<div>runtime known for ' + stats.watchesWithRuntime + ' of ' + stats.total + ' watches</div>';
+  }
   html += '<div>' + stats.thisYear + ' in ' + new Date().getFullYear() + '</div>';
   if (stats.lastWatched) html += '<div>last watched ' + stats.lastWatched + '</div>';
   html += '</div>';

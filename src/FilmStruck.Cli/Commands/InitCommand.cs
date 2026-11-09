@@ -75,7 +75,7 @@ public class InitCommand : Command<InitCommand.Settings>
         var filmsPath = Path.Combine(dataDir, "films.csv");
         if (!File.Exists(filmsPath) || settings.Force)
         {
-            File.WriteAllText(filmsPath, "tmdbId,title,director,releaseYear,language,posterPath\n");
+            File.WriteAllText(filmsPath, CsvService.FilmsHeader + "\n");
             AnsiConsole.MarkupLine("[green]+[/] data/films.csv");
         }
         else

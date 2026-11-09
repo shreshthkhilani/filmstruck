@@ -52,6 +52,24 @@ public class TmdbServiceTests
         Assert.That(results, Is.Empty);
     }
 
+    [TestCase("136", 136)]
+    [TestCase("null", null)]
+    [TestCase("0", null)]
+    [TestCase("-1", null)]
+    [TestCase(null, null)]
+    public async Task GetApprovedFilmAsync_UsesPositiveRuntimeFromDetails(string? runtime, int? expected)
+    {
+        var runtimeProperty = runtime == null ? "" : ",\"runtime\":" + runtime;
+        _mockHandler.SetResponse("credits", """{"crew":[]}""");
+        _mockHandler.SetResponse("/3/movie/603", "{\"id\":603,\"title\":\"The Matrix\"" + runtimeProperty + "}");
+
+        var (film, error) = await _service.GetApprovedFilmAsync(603, "The Matrix");
+
+        Assert.That(error, Is.Null);
+        Assert.That(film, Is.Not.Null);
+        Assert.That(film!.RuntimeMinutes, Is.EqualTo(expected));
+    }
+
     [Test]
     public async Task GetDirectorAsync_ExtractsDirector()
     {
