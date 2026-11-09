@@ -68,3 +68,11 @@ test('also with excludes the selected companion before taking five', () => {
 test('footer shows every available entry when there are fewer than five', () => {
   assert.deepEqual(entries(renderFooter(films.slice(0, 1)), 'top directors'), ['Director F: 1']);
 });
+
+test('numeric and reserved labels rank by count and first appearance', () => {
+  const labeledFilms = ['20', '3', 'constructor', '__proto__', '10', '1', '__proto__']
+    .map(label => ({ ...films[0], location: label, companions: 'Selected,' + label }));
+  const expected = ['__proto__: 2', '20: 1', '3: 1', 'constructor: 1', '10: 1'];
+  assert.deepEqual(entries(renderFooter(labeledFilms), 'top locations'), expected);
+  assert.deepEqual(entries(renderFooter(labeledFilms, '?with=selected'), 'also with'), expected);
+});
