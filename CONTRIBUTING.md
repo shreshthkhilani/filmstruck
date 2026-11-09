@@ -149,6 +149,8 @@ The test suite:
 - Validates expected outputs (files created, data updated)
 - Cleans up automatically
 
+The footer rendering tests run when Node.js 20 or later is available.
+
 Tests requiring TMDB API access are skipped if `TMDB_API_KEY` is not set. To run the full suite:
 
 ```bash

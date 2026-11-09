@@ -109,11 +109,11 @@ function calculateStats(films) {
   return stats;
 }
 
-// Get top N from object
-function getTopN(obj, n) {
+// Rank footer entries by count. Stable sorting keeps ties in log order.
+function getTopFive(obj) {
   return Object.entries(obj)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, n);
+    .slice(0, 5);
 }
 
 // Render header
@@ -252,18 +252,17 @@ function renderHeartsSection() {
 // Render stats
 function renderStats(stats, filter) {
   const statsEl = document.getElementById('stats');
-  const topDirectors = getTopN(stats.directors, 3);
-  const topLanguages = getTopN(stats.languages, 3);
-  const topDecades = getTopN(stats.decades, 3);
-  const topCompanions = getTopN(stats.companions, 3);
+  const topDirectors = getTopFive(stats.directors);
+  const topLanguages = getTopFive(stats.languages);
+  const topDecades = getTopFive(stats.decades);
+  const topCompanions = getTopFive(stats.companions);
 
   // Filter out the selected companions from "top companions"
   const filterLower = filter.map(c => c.toLowerCase());
-  const otherCompanions = getTopN(
+  const otherCompanions = getTopFive(
     Object.fromEntries(
       Object.entries(stats.companions).filter(([name]) => !filterLower.includes(name.toLowerCase()))
-    ),
-    3
+    )
   );
 
   let html = '';
@@ -300,7 +299,7 @@ function renderStats(stats, filter) {
   }
 
   // Top locations
-  const topLocations = getTopN(stats.locations, 3);
+  const topLocations = getTopFive(stats.locations);
   if (topLocations.length > 0) {
     html += '<div class="stat-col">';
     html += '<div class="stat-header">top locations</div>';

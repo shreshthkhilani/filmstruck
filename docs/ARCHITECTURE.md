@@ -268,10 +268,12 @@ Displays:
 - Total films count
 - Films watched this year
 - Last watched date
-- Top directors
-- Top languages
-- Top decades
-- Top companions (or "also with" when filtering)
+- Up to five directors, languages, release decades, locations, and companions, ranked by watch count
+- Up to five other companions under "also with" when filtering, after excluding the selected names
+
+At equal counts, the footer keeps the order in which entries first appear in the filtered log.
+The full companion list remains available in the filter, and `calculate` exports complete rankings
+to `data/stats.csv`.
 
 ---
 
