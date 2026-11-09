@@ -156,8 +156,8 @@ rerun the deployment workflow after the package update is available.
 
 Calculate statistics and write to `data/stats.csv`. The hours-watched summary adds
 each watch with a known runtime, including rewatches. The site applies the same
-calculation to the current companion filter. Both show coverage when runtimes
-are missing and mark the total unavailable when no runtime is known.
+calculation to the current companion filter. The command reports coverage when
+runtimes are missing. Both mark the total unavailable when no runtime is known.
 
 ```bash
 filmstruck calculate

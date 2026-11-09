@@ -275,17 +275,14 @@ function renderStats(stats, filter) {
   // Total films
   html += '<div class="stat-col">';
   html += '<div class="stat-header total-stat-header">' + stats.total + ' films</div>';
+  html += '<div>' + stats.thisYear + ' in ' + new Date().getFullYear() + '</div>';
+  if (stats.lastWatched) html += '<div>last watched ' + stats.lastWatched + '</div>';
   if (stats.watchesWithRuntime > 0) {
     const hours = (stats.totalMinutes / 60).toLocaleString(undefined, { maximumFractionDigits: 2 });
     html += '<div>' + hours + ' hours watched</div>';
   } else {
     html += '<div>hours watched unavailable</div>';
   }
-  if (stats.watchesWithRuntime < stats.total) {
-    html += '<div>runtime known for ' + stats.watchesWithRuntime + ' of ' + stats.total + ' watches</div>';
-  }
-  html += '<div>' + stats.thisYear + ' in ' + new Date().getFullYear() + '</div>';
-  if (stats.lastWatched) html += '<div>last watched ' + stats.lastWatched + '</div>';
   html += '</div>';
 
   // Top directors

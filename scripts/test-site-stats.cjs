@@ -46,6 +46,16 @@ function entries(html, heading) {
   return [...column.split('</div></div>')[0].matchAll(/<div>([^<]+)/g)].map(match => match[1]);
 }
 
+test('footer summary ends with hours watched when some runtimes are missing', () => {
+  const year = new Date().getFullYear();
+  const date = '1/1/' + year;
+  const html = renderFooter([{ ...films[0], date, runtimeMinutes: 120 }, films[1]]);
+  const summary = html.slice(0, html.indexOf('</div></div>') + '</div></div>'.length);
+  assert.deepEqual([...summary.matchAll(/<div[^>]*>([^<]+)/g)].map(match => match[1]), [
+    '2 films', '1 in ' + year, 'last watched ' + date, '2 hours watched'
+  ]);
+});
+
 test('footer shows five entries per category, with ties in log order', () => {
   const html = renderFooter(films);
   const suffixes = ['E: 2', 'F: 1', 'B: 1', 'D: 1', 'C: 1'];
