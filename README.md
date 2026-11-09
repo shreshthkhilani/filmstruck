@@ -144,7 +144,13 @@ Generate the static site from your CSV data.
 filmstruck build
 ```
 
-Outputs `index.html` in the repository root.
+Outputs `index.html` in the repository root. The statistics footer shows up to five directors,
+languages, release decades, locations, and companions by watch count. With a companion filter,
+the rankings use the filtered watches and the “also with” list omits the selected companions.
+
+To refresh an existing site, update the tool with `dotnet tool update --global FilmStruck.Cli` and
+run `filmstruck build` again. For GitHub Pages deployments that install the latest CLI on each run,
+rerun the deployment workflow after the package update is available.
 
 ### `filmstruck calculate`
 

@@ -176,6 +176,17 @@ else
     fail "build: index.html not generated with unlinked film"
 fi
 
+# Exercise footer rendering with enough entries to cross the ranking limit.
+if command -v node >/dev/null 2>&1; then
+    if node --test "$SCRIPT_DIR/test-site-stats.cjs"; then
+        pass "site footer rankings"
+    else
+        fail "site footer rankings"
+    fi
+else
+    skip "site footer rankings (requires Node.js)"
+fi
+
 # Test 6: hearts commands (add and remove favorites)
 rm -f data/hearts.csv
 run_command hearts add --tmdb-id 238 >/dev/null 2>&1 || true
