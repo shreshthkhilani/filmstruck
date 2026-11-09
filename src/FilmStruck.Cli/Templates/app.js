@@ -59,11 +59,11 @@ function calculateStats(films) {
     total: films.length,
     thisYear: 0,
     lastWatched: films.length > 0 ? sortFilms(films)[0].date : '',
-    directors: {},
-    languages: {},
-    locations: {},
-    decades: {},
-    companions: {}
+    directors: new Map(),
+    languages: new Map(),
+    locations: new Map(),
+    decades: new Map(),
+    companions: new Map()
   };
 
   const currentYear = new Date().getFullYear().toString();
@@ -77,31 +77,31 @@ function calculateStats(films) {
     if (f.director) {
       const directors = f.director.split(',').map(d => d.trim()).filter(d => d);
       for (const d of directors) {
-        stats.directors[d] = (stats.directors[d] || 0) + 1;
+        stats.directors.set(d, (stats.directors.get(d) ?? 0) + 1);
       }
     }
 
     // Languages
     if (f.language) {
-      stats.languages[f.language] = (stats.languages[f.language] || 0) + 1;
+      stats.languages.set(f.language, (stats.languages.get(f.language) ?? 0) + 1);
     }
 
     // Locations
     if (f.location) {
-      stats.locations[f.location] = (stats.locations[f.location] || 0) + 1;
+      stats.locations.set(f.location, (stats.locations.get(f.location) ?? 0) + 1);
     }
 
     // Release decades
     if (f.releaseYear) {
       const decade = Math.floor(parseInt(f.releaseYear) / 10) * 10 + 's';
-      stats.decades[decade] = (stats.decades[decade] || 0) + 1;
+      stats.decades.set(decade, (stats.decades.get(decade) ?? 0) + 1);
     }
 
     // Companions
     if (f.companions) {
       const companions = f.companions.split(',').map(c => c.trim()).filter(c => c);
       for (const c of companions) {
-        stats.companions[c] = (stats.companions[c] || 0) + 1;
+        stats.companions.set(c, (stats.companions.get(c) ?? 0) + 1);
       }
     }
   }
@@ -109,11 +109,11 @@ function calculateStats(films) {
   return stats;
 }
 
-// Get top N from object
-function getTopN(obj, n) {
-  return Object.entries(obj)
+// Rank footer entries by count. Stable sorting keeps ties in log order.
+function getTopFive(entries) {
+  return [...entries]
     .sort((a, b) => b[1] - a[1])
-    .slice(0, n);
+    .slice(0, 5);
 }
 
 // Render header
@@ -252,18 +252,15 @@ function renderHeartsSection() {
 // Render stats
 function renderStats(stats, filter) {
   const statsEl = document.getElementById('stats');
-  const topDirectors = getTopN(stats.directors, 3);
-  const topLanguages = getTopN(stats.languages, 3);
-  const topDecades = getTopN(stats.decades, 3);
-  const topCompanions = getTopN(stats.companions, 3);
+  const topDirectors = getTopFive(stats.directors);
+  const topLanguages = getTopFive(stats.languages);
+  const topDecades = getTopFive(stats.decades);
+  const topCompanions = getTopFive(stats.companions);
 
   // Filter out the selected companions from "top companions"
   const filterLower = filter.map(c => c.toLowerCase());
-  const otherCompanions = getTopN(
-    Object.fromEntries(
-      Object.entries(stats.companions).filter(([name]) => !filterLower.includes(name.toLowerCase()))
-    ),
-    3
+  const otherCompanions = getTopFive(
+    [...stats.companions].filter(([name]) => !filterLower.includes(name.toLowerCase()))
   );
 
   let html = '';
@@ -300,7 +297,7 @@ function renderStats(stats, filter) {
   }
 
   // Top locations
-  const topLocations = getTopN(stats.locations, 3);
+  const topLocations = getTopFive(stats.locations);
   if (topLocations.length > 0) {
     html += '<div class="stat-col">';
     html += '<div class="stat-header">top locations</div>';
